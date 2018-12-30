@@ -40,5 +40,6 @@ void loop()
     // if the file didn't open, print an error:
     Serial.println("error opening test.txt");
   }
+  delay(1000);
 
 }
