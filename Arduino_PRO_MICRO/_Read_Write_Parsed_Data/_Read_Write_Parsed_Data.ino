@@ -76,6 +76,8 @@ void loop()
     {
       long latitude_mdeg = nmea.getLatitude();
       long longitude_mdeg = nmea.getLongitude();
+      uint8_t num_satellites = nmea.getNumSatellites();
+      
 
       Serial.println("");
       Serial.print("Latitude (deg): ");
@@ -104,7 +106,11 @@ void loop()
   }
 
   delay(1000); //Don't pound too hard on the I2C bus
+
+  
   digitalWrite(DonePin, HIGH); // toggle DONE so TPL knows to cut power!
+  delay(5);
+  digitalWrite(DonePin,LOW); // toggle DONE so TPL can return in old state!
 }
 
 //This function gets called from the SparkFun Ublox Arduino Library
