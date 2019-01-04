@@ -24,7 +24,7 @@
 #include <Wire.h> //Needed for I2C to GPS
 
 #include <SD.h>
-File LatLongFile;
+File GPSFile;
 const int ChipSelect = 10; // For communication with SD card
 
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_Ublox_GPS
@@ -36,13 +36,15 @@ MicroNMEA nmea(nmeaBuffer, sizeof(nmeaBuffer));
 
 const int DonePin = 4; // Signal to timer TPL5110
 
+long int alt = 400; // Trial for altitude
+
 void setup()
 {
   Serial.begin(115200);
   // ##################  INITIALIZE TIMERS  #####################
   pinMode(DonePin, OUTPUT);
   digitalWrite(DonePin, LOW);
-  
+
   // ################## INITIALIZE SD CARD ######################
   Serial.print("Initializing SD card...");
   pinMode(ChipSelect, OUTPUT);
@@ -67,50 +69,81 @@ void setup()
 void loop()
 {
   myGPS.checkUblox(); //See if new data is available. Process bytes as they come in.
-  LatLongFile = SD.open("LatLong.txt", FILE_WRITE);
+  GPSFile = SD.open("Position.txt", FILE_WRITE);
 
-  if (LatLongFile) {
-    Serial.println("Writing to LatLong.txt...");
-    
+  if (GPSFile) {
     if (nmea.isValid() == true)
     {
+      uint8_t num_satellites = nmea.getNumSatellites();
+      uint8_t HDOP = nmea.getHDOP();
       long latitude_mdeg = nmea.getLatitude();
       long longitude_mdeg = nmea.getLongitude();
-      uint8_t num_satellites = nmea.getNumSatellites();
+      // boolean altitude_mm = nmea.getAltitude(alt);
+      uint8_t day = nmea.getDay();
+      uint8_t month = nmea.getMonth();
+      uint16_t year = nmea.getYear();   
+      uint8_t hour = nmea.getHour();
+      uint8_t minute = nmea.getMinute();
+      uint8_t second = nmea.getSecond();
+      uint16_t hundredths = nmea.getHundredths();
+
+      Serial.println("Printing Position...");
+
+      GPSFile.print("Number of Satelites: ");
+      GPSFile.println(num_satellites);
+
+      GPSFile.print("Horizontal Dilution: ");
+      GPSFile.println(HDOP);
+
+      GPSFile.print("Latitude (deg): ");
+      GPSFile.println(latitude_mdeg / 1000000., 6);
+
+      GPSFile.print("Longitude (deg): ");
+      GPSFile.println(longitude_mdeg / 1000000., 6);
+
+      // GPSFile.print("Altitude (mm): ");
+      // GPSFile.println(altitude_mm);
+
+      GPSFile.print("Date: ");
+      GPSFile.print(day);
+      GPSFile.print(".");
+      GPSFile.print(month);
+      GPSFile.print(".");
+      GPSFile.println(year);
+
+      GPSFile.print("Time: ");
+      GPSFile.print(hour);
+      GPSFile.print(":");
+      GPSFile.print(minute);
+      GPSFile.print(":");
+      GPSFile.print(second);
+      GPSFile.print(":");
+      GPSFile.println(hundredths);
+
+      GPSFile.println("");
       
-
-      Serial.println("");
-      Serial.print("Latitude (deg): ");
-      Serial.println(latitude_mdeg / 1000000., 6);
-      Serial.print("Longitude (deg): ");
-      Serial.println(longitude_mdeg / 1000000., 6);
-
-      LatLongFile.print("Latitude (deg): ");
-      LatLongFile.println(latitude_mdeg / 1000000., 6);
-      LatLongFile.print("Longitude (deg): ");
-      LatLongFile.println(longitude_mdeg / 1000000., 6);
+      Serial.println("Done!");
     }
     else
     {
-      Serial.print("No Fix - ");
-      Serial.print("Num. satellites: ");
+      Serial.print("No Fix - Num. satellites: ");
       Serial.println(nmea.getNumSatellites());
     }
 
     // close the file:
-    LatLongFile.close();
+    GPSFile.close();
 
   } else {
     // if the file didn't open, print an error:
-    Serial.println("error opening LatLongFile.txt");
+    Serial.println("error opening GPSFile.txt");
   }
 
   delay(1000); //Don't pound too hard on the I2C bus
 
-  
+
   digitalWrite(DonePin, HIGH); // toggle DONE so TPL knows to cut power!
   delay(5);
-  digitalWrite(DonePin,LOW); // toggle DONE so TPL can return in old state!
+  digitalWrite(DonePin, LOW); // toggle DONE so TPL can return in old state!
 }
 
 //This function gets called from the SparkFun Ublox Arduino Library
