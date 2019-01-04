@@ -8,7 +8,7 @@
 
   This example reads the NMEA characters over I2C and pipes them to MicroNMEA
   This example will output your current long/lat and satellites in view
- 
+
   Feel like supporting open source hardware?
   Buy a board from SparkFun! https://www.sparkfun.com/products/14980
 
@@ -23,6 +23,10 @@
 
 #include <Wire.h> //Needed for I2C to GPS
 
+#include <SD.h>
+File LatLongFile;
+const int ChipSelect = 10; // For communication with SD card
+
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_Ublox_GPS
 SFE_UBLOX_GPS myGPS;
 
@@ -30,11 +34,26 @@ SFE_UBLOX_GPS myGPS;
 char nmeaBuffer[100];
 MicroNMEA nmea(nmeaBuffer, sizeof(nmeaBuffer));
 
+const int DonePin = 4; // Signal to timer TPL5110
+
 void setup()
 {
   Serial.begin(115200);
-  Serial.println("Ublox GPS I2C Test");
+  // ##################  INITIALIZE TIMERS  #####################
+  pinMode(DonePin, OUTPUT);
+  digitalWrite(DonePin, LOW);
+  
+  // ################## INITIALIZE SD CARD ######################
+  Serial.print("Initializing SD card...");
+  pinMode(ChipSelect, OUTPUT);
 
+  Serial.println("Ublox GPS I2C Test");
+  if (!SD.begin(ChipSelect)) {
+    Serial.println("initialization failed!");
+    return;
+  }
+
+  // ################## INITIALIZE GPS ######################
   myGPS.begin(Wire);
   if (myGPS.isConnected() == false)
   {
@@ -48,25 +67,44 @@ void setup()
 void loop()
 {
   myGPS.checkUblox(); //See if new data is available. Process bytes as they come in.
+  LatLongFile = SD.open("LatLong.txt", FILE_WRITE);
 
-  if(nmea.isValid() == true)
-  {
-    long latitude_mdeg = nmea.getLatitude();
-    long longitude_mdeg = nmea.getLongitude();
+  if (LatLongFile) {
+    Serial.println("Writing to LatLong.txt...");
+    
+    if (nmea.isValid() == true)
+    {
+      long latitude_mdeg = nmea.getLatitude();
+      long longitude_mdeg = nmea.getLongitude();
 
-    Serial.print("Latitude (deg): ");
-    Serial.println(latitude_mdeg / 1000000., 6);
-    Serial.print("Longitude (deg): ");
-    Serial.println(longitude_mdeg / 1000000., 6);
+      Serial.println("");
+      Serial.print("Latitude (deg): ");
+      Serial.println(latitude_mdeg / 1000000., 6);
+      Serial.print("Longitude (deg): ");
+      Serial.println(longitude_mdeg / 1000000., 6);
+
+      LatLongFile.print("Latitude (deg): ");
+      LatLongFile.println(latitude_mdeg / 1000000., 6);
+      LatLongFile.print("Longitude (deg): ");
+      LatLongFile.println(longitude_mdeg / 1000000., 6);
+    }
+    else
+    {
+      Serial.print("No Fix - ");
+      Serial.print("Num. satellites: ");
+      Serial.println(nmea.getNumSatellites());
+    }
+
+    // close the file:
+    LatLongFile.close();
+
+  } else {
+    // if the file didn't open, print an error:
+    Serial.println("error opening LatLongFile.txt");
   }
-  else
-  {
-    Serial.print("No Fix - ");
-    Serial.print("Num. satellites: ");
-    Serial.println(nmea.getNumSatellites());
-  }
 
-  delay(250); //Don't pound too hard on the I2C bus
+  delay(1000); //Don't pound too hard on the I2C bus
+  digitalWrite(DonePin, HIGH); // toggle DONE so TPL knows to cut power!
 }
 
 //This function gets called from the SparkFun Ublox Arduino Library
@@ -78,4 +116,5 @@ void SFE_UBLOX_GPS::processNMEA(char incoming)
   //Take the incoming char from the Ublox I2C port and pass it on to the MicroNMEA lib
   //for sentence cracking
   nmea.process(incoming);
+
 }
