@@ -77,19 +77,19 @@ void loop()
     if (nmea.isValid() == true)
     {
       Serial.println("Printing Position...");
-      
+
       uint8_t num_satellites = nmea.getNumSatellites();
       GPSFile.print("Number of Satelites: ");
       GPSFile.println(num_satellites);
-      
+
       uint8_t HDOP = nmea.getHDOP();
       GPSFile.print("Horizontal Dilution: ");
-      GPSFile.println(HDOP);
-      
+      GPSFile.println(HDOP / 10., 2);
+
       long latitude_mdeg = nmea.getLatitude();
       GPSFile.print("Latitude (deg): ");
       GPSFile.println(latitude_mdeg / 1000000., 6);
-      
+
       long longitude_mdeg = nmea.getLongitude();
       GPSFile.print("Longitude (deg): ");
       GPSFile.println(longitude_mdeg / 1000000., 6);
@@ -104,7 +104,7 @@ void loop()
       {
         GPSFile.println("Not available.");
       }
-      
+
       uint8_t day = nmea.getDay();
       uint8_t month = nmea.getMonth();
       uint16_t year = nmea.getYear();
@@ -114,7 +114,7 @@ void loop()
       GPSFile.print(month);
       GPSFile.print(".");
       GPSFile.println(year);
-      
+
       uint8_t hour = nmea.getHour();
       uint8_t minute = nmea.getMinute();
       uint8_t second = nmea.getSecond();
