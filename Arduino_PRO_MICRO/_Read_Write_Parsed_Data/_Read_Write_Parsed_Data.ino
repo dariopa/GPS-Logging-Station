@@ -48,12 +48,16 @@ void setup()
   // ################## INITIALIZE SD CARD ######################
   Serial.print("Initializing SD card...");
   pinMode(ChipSelect, OUTPUT);
-
-  Serial.println("Ublox GPS I2C Test");
   if (!SD.begin(ChipSelect)) {
     Serial.println("initialization failed!");
     return;
   }
+
+  // Write separation line in .txt file
+  GPSFile = SD.open("GPS.txt", FILE_WRITE);
+  GPSFile.println("--------------------");
+  GPSFile.println("");
+  GPSFile.close();  
 
   // ################## INITIALIZE GPS ######################
   myGPS.begin(Wire);
@@ -69,7 +73,7 @@ void setup()
 void loop()
 {
   myGPS.checkUblox(); //See if new data is available. Process bytes as they come in.
-  GPSFile = SD.open("Position.txt", FILE_WRITE);
+  GPSFile = SD.open("GPS.txt", FILE_WRITE);
 
   if (GPSFile) {
     if (nmea.isValid() == true)
@@ -142,7 +146,7 @@ void loop()
 
 
   digitalWrite(DonePin, HIGH); // toggle DONE so TPL knows to cut power!
-  delay(5);
+  delay(1);
   digitalWrite(DonePin, LOW); // toggle DONE so TPL can return in old state!
 }
 
