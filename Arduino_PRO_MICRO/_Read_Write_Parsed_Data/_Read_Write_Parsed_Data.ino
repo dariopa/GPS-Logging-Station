@@ -149,7 +149,7 @@ void loop()
   {
     digitalWrite(DonePin, HIGH); // toggle DONE so TPL knows to cut power!
     delay(1);
-    digitalWrite(DonePin, LOW); // toggle DONE so TPL can return in old state!
+    digitalWrite(DonePin, LOW); // toggle DONE so TPL can return in old state! --> Won't be needed in final application!
   }
 }
 
