@@ -36,8 +36,6 @@ MicroNMEA nmea(nmeaBuffer, sizeof(nmeaBuffer));
 
 const int DonePin = 4; // Signal to timer TPL5110
 
-long int alt = 400; // Trial for altitude
-
 void setup()
 {
   Serial.begin(115200);
@@ -78,43 +76,49 @@ void loop()
   if (GPSFile) {
     if (nmea.isValid() == true)
     {
-      uint8_t num_satellites = nmea.getNumSatellites();
-      uint8_t HDOP = nmea.getHDOP();
-      long latitude_mdeg = nmea.getLatitude();
-      long longitude_mdeg = nmea.getLongitude();
-      // boolean altitude_mm = nmea.getAltitude(alt);
-      uint8_t day = nmea.getDay();
-      uint8_t month = nmea.getMonth();
-      uint16_t year = nmea.getYear();
-      uint8_t hour = nmea.getHour();
-      uint8_t minute = nmea.getMinute();
-      uint8_t second = nmea.getSecond();
-      uint16_t hundredths = nmea.getHundredths();
-
       Serial.println("Printing Position...");
-
+      
+      uint8_t num_satellites = nmea.getNumSatellites();
       GPSFile.print("Number of Satelites: ");
       GPSFile.println(num_satellites);
-
+      
+      uint8_t HDOP = nmea.getHDOP();
       GPSFile.print("Horizontal Dilution: ");
       GPSFile.println(HDOP);
-
+      
+      long latitude_mdeg = nmea.getLatitude();
       GPSFile.print("Latitude (deg): ");
       GPSFile.println(latitude_mdeg / 1000000., 6);
-
+      
+      long longitude_mdeg = nmea.getLongitude();
       GPSFile.print("Longitude (deg): ");
       GPSFile.println(longitude_mdeg / 1000000., 6);
 
-      // GPSFile.print("Altitude (mm): ");
-      // GPSFile.println(altitude_mm);
-
+      long alt;
+      if (nmea.getAltitude(alt))
+      {
+        GPSFile.print("Altitude (m): ");
+        GPSFile.println(alt / 1000., 3);
+      }
+      else
+      {
+        GPSFile.println("Not available.");
+      }
+      
+      uint8_t day = nmea.getDay();
+      uint8_t month = nmea.getMonth();
+      uint16_t year = nmea.getYear();
       GPSFile.print("Date: ");
       GPSFile.print(day);
       GPSFile.print(".");
       GPSFile.print(month);
       GPSFile.print(".");
       GPSFile.println(year);
-
+      
+      uint8_t hour = nmea.getHour();
+      uint8_t minute = nmea.getMinute();
+      uint8_t second = nmea.getSecond();
+      uint16_t hundredths = nmea.getHundredths();
       GPSFile.print("Time: ");
       GPSFile.print(hour);
       GPSFile.print(":");
@@ -142,7 +146,7 @@ void loop()
     Serial.println("error opening GPSFile.txt");
   }
 
-  delay(1000); //Don't pound too hard on the I2C bus
+  delay(500); //Don't pound too hard on the I2C bus
 
   // Switch off LED // will be used with TPL5110 later on!
   while (1 == 2)
