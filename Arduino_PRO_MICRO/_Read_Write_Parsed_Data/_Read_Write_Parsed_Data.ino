@@ -57,7 +57,7 @@ void setup()
   GPSFile = SD.open("GPS.txt", FILE_WRITE);
   GPSFile.println("--------------------");
   GPSFile.println("");
-  GPSFile.close();  
+  GPSFile.close();
 
   // ################## INITIALIZE GPS ######################
   myGPS.begin(Wire);
@@ -85,7 +85,7 @@ void loop()
       // boolean altitude_mm = nmea.getAltitude(alt);
       uint8_t day = nmea.getDay();
       uint8_t month = nmea.getMonth();
-      uint16_t year = nmea.getYear();   
+      uint16_t year = nmea.getYear();
       uint8_t hour = nmea.getHour();
       uint8_t minute = nmea.getMinute();
       uint8_t second = nmea.getSecond();
@@ -125,7 +125,7 @@ void loop()
       GPSFile.println(hundredths);
 
       GPSFile.println("");
-      
+
       Serial.println("Done!");
     }
     else
@@ -144,10 +144,13 @@ void loop()
 
   delay(1000); //Don't pound too hard on the I2C bus
 
-
-  digitalWrite(DonePin, HIGH); // toggle DONE so TPL knows to cut power!
-  delay(1);
-  digitalWrite(DonePin, LOW); // toggle DONE so TPL can return in old state!
+  // Switch off LED // will be used with TPL5110 later on!
+  while (1 == 2)
+  {
+    digitalWrite(DonePin, HIGH); // toggle DONE so TPL knows to cut power!
+    delay(1);
+    digitalWrite(DonePin, LOW); // toggle DONE so TPL can return in old state!
+  }
 }
 
 //This function gets called from the SparkFun Ublox Arduino Library
