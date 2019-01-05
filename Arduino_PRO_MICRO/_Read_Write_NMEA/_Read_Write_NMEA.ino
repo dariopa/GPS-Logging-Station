@@ -46,7 +46,7 @@ void loop()
   myGPS.checkUblox(); //See if new data is available. Process bytes as they come in.
 
   delay(250); //Don't pound too hard on the I2C bus
-  digitalWrite(DonePin, HIGH); // toggle DONE so TPL knows to cut power!
+  // digitalWrite(DonePin, HIGH); // toggle DONE so TPL knows to cut power!
 }
 
 
