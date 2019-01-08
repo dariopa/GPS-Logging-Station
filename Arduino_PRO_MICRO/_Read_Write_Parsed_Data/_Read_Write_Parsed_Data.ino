@@ -66,6 +66,8 @@ void setup()
   }
 
   Wire.setClock(400000); //Increase I2C clock speed to 400kHz
+
+  delay(10000); // delay so that the GPS receiver can converge
 }
 
 void loop()
@@ -146,7 +148,7 @@ void loop()
     Serial.println("error opening GPSFile.txt");
   }
 
-  delay(500); //Don't pound too hard on the I2C bus
+  delay(1000); //Don't pound too hard on the I2C bus
 
   // Switch off LED // will be used with TPL5110 later on!
   while (1 == 2)
