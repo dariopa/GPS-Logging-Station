@@ -8,7 +8,7 @@ float turns = 4; // required revolutions for the package to fall down
 // ###################################
 
 const int revolution = 2048;  // steps per revolution
-int vel = 19; // speed of motor
+int vel = 18; // speed of motor
 int steps = turns * revolution; // steps motor will have to do
 int val; // variable that is entered via Serial Port. 1 for elevating, 2 for descending. 
 
