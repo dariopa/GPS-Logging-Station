@@ -6,13 +6,16 @@
 // ########################################
 
 // Number of Revolutions Required
-float RevolutionsRequired = 4;
+float RevolutionsRequired = 2;
 
 // Speed of Motor
-int vel = 700;
+int vel = 1100;
 
 // Variable that is entered via Serial Port. 1 for elevating, 2 for descending.
 int val;
+
+// Variable that checks which was the last entry.
+int counter_check;
 // ########################################
 
 // Number of steps per internal motor revolution
@@ -41,16 +44,19 @@ void loop() {
   if (Serial.available())
   {
     val = Serial.parseInt();
-    Serial.println(val);
 
-    if (val == 1)
+    Serial.println(val);
+    if (val == 1 && counter_check != 1)
     {
       stepper.step(STEPS);
+      counter_check = val;
     }
 
-    else if (val == 2)
+    else if (val == 2 && counter_check != 2)
     {
       stepper.step(-STEPS);
+      counter_check = val;
     }
+    Serial.println(counter_check);
   }
 }
