@@ -6,10 +6,10 @@
 // ########################################
 
 // Number of Revolutions Required
-float RevolutionsRequired = 2;
+float RevolutionsRequired = 15;
 
 // Speed of Motor
-int vel = 1100;
+int vel = 1200;
 
 // Variable that is entered via Serial Port. 1 for elevating, 2 for descending.
 int val;
