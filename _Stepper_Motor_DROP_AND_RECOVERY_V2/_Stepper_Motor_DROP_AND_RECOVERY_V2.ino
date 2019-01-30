@@ -11,17 +11,19 @@ const int stepPin = 3; // Step
 const int STEPS_PER_REV = 200;
 
 // Revolutions required
-const int Rev = 15;
+float Rev;
+
+// Maximum range of motion
+
+const float motionRange = 18; // mm
+
+// Variable checks if range boundaries are exceeded.
+float counterCheck = 0;
 
 // Velocity
 const int Vel = 1900;
+
 // ########################################
-
-// Variable that is entered via Serial Port. 1 for elevating, 2 for descending.
-int val;
-
-// Variable that checks which was the last entry.
-int counter_check;
 
 void setup() {
   Serial.begin(9600);
@@ -30,37 +32,37 @@ void setup() {
 }
 
 void loop() {
+  Serial.println("Please enter your command: ");
+  while (Serial.available() == 0) {
+  }
 
-  if (Serial.available())
-  {
-    val = Serial.parseInt();
-    Serial.println(val);
+  Rev = Serial.parseFloat();
+  Serial.println(Rev);
 
-    if (val == 1 && counter_check != 1) {
-      // Set motor direction clockwise
-      digitalWrite(dirPin, HIGH);
+  counterCheck = counterCheck + Rev;
+  if (counterCheck >= 0 && counterCheck <= motionRange) {
 
-      // Spin motor one rotation slowly
-      for (int x = 0; x < Rev * STEPS_PER_REV; x++) {
-        digitalWrite(stepPin, HIGH);
-        delayMicroseconds(1000000. / Vel);
-        digitalWrite(stepPin, LOW);
-        delayMicroseconds(1000000. / Vel);
-      }
-      counter_check = val;
-    }
-    else if (val == 2 && counter_check != 2) {
-      // Set motor direction clockwise
+    if (Rev < 0) {
       digitalWrite(dirPin, LOW);
+    }
+    else if (Rev >= 0) {
+      digitalWrite(dirPin, HIGH);
+    }
 
-      // Spin motor one rotation slowly
-      for (int x = 0; x < Rev * STEPS_PER_REV; x++) {
-        digitalWrite(stepPin, HIGH);
-        delayMicroseconds(1000000. / Vel);
-        digitalWrite(stepPin, LOW);
-        delayMicroseconds(1000000. / Vel);
-      }
-      counter_check = val;      
+    for (int x = 0; x < abs(Rev) * STEPS_PER_REV; x++) {
+      digitalWrite(stepPin, HIGH);
+      delayMicroseconds(1000000. / Vel);
+      digitalWrite(stepPin, LOW);
+      delayMicroseconds(1000000. / Vel);
     }
   }
+  else {
+    Serial.println("Didn't move because you exceed range of motion! Change your command: ");
+    Serial.println("");
+    counterCheck = counterCheck - Rev;
+  }
+  
+  Serial.print("Your hight is currently: ");
+  Serial.print(counterCheck);
+  Serial.println(" mm from the ground.");
 }
