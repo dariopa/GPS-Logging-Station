@@ -61,6 +61,7 @@ struct RXM_RAWX {
   char prdStdev;
   char cpStdev;
   char doStdev;
+  char trkStat;
   unsigned char reserved3;
 };
 
@@ -90,7 +91,6 @@ bool processGPS() {
     else {
       if ( (fpos - 2) < payloadSize )
         ((unsigned char*)(&rawx))[fpos - 2] = c;
-
       fpos++;
 
       if ( fpos == (payloadSize + 2) ) {
