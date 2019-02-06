@@ -31,25 +31,40 @@ const char UBLOX_INIT[] PROGMEM = {
 
 const unsigned char UBX_HEADER[] = { 0xB5, 0x62 };
 
-struct NAV_POSLLH {
+struct RXM_RAWX {
   unsigned char cls;
   unsigned char id;
   unsigned short len;
-  unsigned long iTOW;
-  long lon;
-  long lat;
-  long height;
-  long hMSL;
-  unsigned long hAcc;
-  unsigned long vAcc;
+  double rcvTow;
+  unsigned short week;
+  signed char leapS;
+  unsigned char numMeas;
+  unsigned int recStat;
+  unsigned char version_;
+  unsigned char reserved1;
+  // Start of repeated block (numMeas times)
+  double prMes; 
+  double cpMes; 
+  float doMes;
+  unsigned char gnssId;
+  unsigned char svId;
+  unsigned char reserved2;
+  unsigned char freqId;
+  unsigned short locktime;
+  unsigned char cno;
+  unsigned int prdStdev;
+  unsigned int cpStdev; 
+  unsigned int doStdev;
+  unsigned int trkStat;
+  unsigned char reserved3;
 };
 
-NAV_POSLLH posllh;
+RXM_RAWX rawx;
 
 void calcChecksum(unsigned char* CK) {
   memset(CK, 0, 2);
-  for (int i = 0; i < (int)sizeof(NAV_POSLLH); i++) {
-    CK[0] += ((unsigned char*)(&posllh))[i];
+  for (int i = 0; i < (int)sizeof(RXM_RAWX); i++) {
+    CK[0] += ((unsigned char*)(&rawx))[i];
     CK[1] += CK[0];
   }
 }
@@ -57,7 +72,7 @@ void calcChecksum(unsigned char* CK) {
 bool processGPS() {
   static int fpos = 0;
   static unsigned char checksum[2];
-  const int payloadSize = sizeof(NAV_POSLLH);
+  const int payloadSize = sizeof(RXM_RAWX);
 
   while ( serial.available() ) {
     byte c = serial.read();
@@ -69,7 +84,7 @@ bool processGPS() {
     }
     else {
       if ( (fpos - 2) < payloadSize )
-        ((unsigned char*)(&posllh))[fpos - 2] = c;
+        ((unsigned char*)(&rawx))[fpos - 2] = c;
 
       fpos++;
 
@@ -111,13 +126,7 @@ void setup()
 
 void loop() {
   if ( processGPS() ) {
-    Serial.print("I'm here");
-    Serial.print("iTOW:");      Serial.print(posllh.iTOW);
-    Serial.print(" lat/lon: "); Serial.print(posllh.lat / 10000000.0f); Serial.print(","); Serial.print(posllh.lon / 10000000.0f);
-    Serial.print(" height: ");  Serial.print(posllh.height / 1000.0f);
-    Serial.print(" hMSL: ");    Serial.print(posllh.hMSL / 1000.0f);
-    Serial.print(" hAcc: ");    Serial.print(posllh.hAcc / 1000.0f);
-    Serial.print(" vAcc: ");    Serial.print(posllh.vAcc / 1000.0f);
+    Serial.print("rcvTow:");      Serial.print(rawx.rcvTow);
     Serial.println();
   }
 }
