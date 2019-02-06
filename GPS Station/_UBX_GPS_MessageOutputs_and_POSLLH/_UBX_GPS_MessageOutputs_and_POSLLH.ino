@@ -2,7 +2,6 @@
 
 const byte rxPin = 8;
 const byte txPin = 9;
-char cha = 'a';
 
 // Connect the GPS RX/TX to arduino pins 8 and 9
 SoftwareSerial serial = SoftwareSerial(rxPin, txPin);
