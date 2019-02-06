@@ -1,8 +1,14 @@
+// RETRIEVE RAWX MESSAGE FOR RINEX GENERATION.
+
+// Disable NMEA sentences and enable UBX-RXM-RAWX message.
+// Set rate to deliberate value.
+// Microcontroller: Arduino Pro Micro 3.3V/ 8MHz (https://www.sparkfun.com/products/12587)
+// GPS Receiver: NEO-M8P-2 (https://www.sparkfun.com/products/15005)
+
 #include <SoftwareSerial.h>
 
 const byte rxPin = 8;
 const byte txPin = 9;
-char cha = 'a';
 
 // Connect the GPS RX/TX to arduino pins 8 and 9
 SoftwareSerial serial = SoftwareSerial(rxPin, txPin);
@@ -39,8 +45,7 @@ struct RXM_RAWX {
   unsigned short week;
   signed char leapS;
   unsigned char numMeas;
-  unsigned int recStat;
-  unsigned char version_;
+  char recStat;
   unsigned char reserved1;
 
   // Start of repeated block (numMeas times)
@@ -53,10 +58,9 @@ struct RXM_RAWX {
   unsigned char freqId;
   unsigned short locktime;
   unsigned char cno;
-  unsigned int prdStdev;
-  unsigned int cpStdev;
-  unsigned int doStdev;
-  unsigned int trkStat;
+  char prdStdev;
+  char cpStdev;
+  char doStdev;
   unsigned char reserved3;
 };
 
@@ -130,4 +134,10 @@ void loop() {
     Serial.print("rcvTow:");      Serial.print(rawx.rcvTow);
     Serial.println();
   }
+  delay(1000);
+  /*
+    // read from port serial, send to port Serial:
+    int Coord = serial.read();
+    Serial.write(Coord);
+  */
 }
