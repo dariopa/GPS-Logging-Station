@@ -14,6 +14,9 @@ const byte txPin = 9;
 SoftwareSerial serial = SoftwareSerial(rxPin, txPin);
 
 const char UBLOX_INIT[] PROGMEM = {
+  // Revert to default configuration
+  0xB5, 0x62, 0x06, 0x09, 0x0D, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0x03, 0x1B, 0x9A,
+  
   // Disable NMEA
   0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x24, // GxGGA off
   0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0xF0, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x2B, // GxGLL off
@@ -111,6 +114,7 @@ bool processGPS() {
       }
     }
   }
+  Serial.println("returns false!");
   return false;
 }
 
@@ -125,7 +129,7 @@ void setup()
   // send configuration data in UBX protocol
   for (int i = 0; i < sizeof(UBLOX_INIT); i++) {
     serial.write( pgm_read_byte(UBLOX_INIT + i) );
-    delay(5); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
+    delay(10); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
   }
 }
 
@@ -134,7 +138,6 @@ void loop() {
     Serial.print("rcvTow:");      Serial.print(rawx.rcvTow);
     Serial.println();
   }
-  delay(1000);
   /*
     // read from port serial, send to port Serial:
     int Coord = serial.read();
