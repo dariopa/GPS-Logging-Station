@@ -19,7 +19,7 @@ float heightCarrier;
 float Rev;
 
 // Maximum range of motion
-const float motionRange = 18; // mm
+const float motionRange = 10; // mm
 
 // Variable checks if range boundaries are exceeded.
 float counterCheck = 0;
