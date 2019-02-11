@@ -49,12 +49,12 @@ OneWire oneWire(ONE_WIRE_BUS); // Setup a oneWire instance to communicate with a
 DallasTemperature sensors(&oneWire); // Pass oneWire reference to Dallas Temperature.
 
 // SD CARD
-File GPSFile;
+File GPSFile; // Declare file where GPS data will be written onto. 
 const int CS = 10; // Chip Select Pin for communication with SD card.
 
 // TPL5110
 const int DonePin = 4; // Signal to timer TPL5110
-int counter = 0;
+int counter = 0; // Counts how many positions have been logged and stored. 
 int measPoints = 20; // Define how many measurment points you want to collect. 
 // ###################################################################################################
 
@@ -142,11 +142,12 @@ void setup() {
   // TEMPERATURE SENSOR
   sensors.begin(); // Start up the library. IC Default 9 bit. If you have troubles consider upping it up to 12. Ups the the delay giving the IC more time to process the temperature measurement
   sensors.requestTemperatures(); // Send the command to get temperatures
-  temp = sensors.getTempCByIndex(0);
+  temp = sensors.getTempCByIndex(0); // Read the temperature
   Serial.print("Temperature for Device is: ");
   Serial.println(temp);
 
   // SD CARD
+  // Initialize SD Card
   pinMode(CS, OUTPUT);
   if (!SD.begin(CS)) {
     Serial.println("initialization of SD card failed!");
@@ -163,9 +164,9 @@ void setup() {
   digitalWrite(DonePin, LOW);
 }
 
-
 void loop() {
   if ( processGPS() ) {
+    // Print data on console
     Serial.print("I'm here: ");
     Serial.print("iTOW: ");
     Serial.print(posllh.iTOW);
@@ -177,6 +178,7 @@ void loop() {
     Serial.print(posllh.height / 1000.0f);
     Serial.println();
 
+    // Store data on SD card
     GPSFile = SD.open("GPS.txt", FILE_WRITE);
     GPSFile.print("iTOW: ");
     GPSFile.println(posllh.iTOW);
