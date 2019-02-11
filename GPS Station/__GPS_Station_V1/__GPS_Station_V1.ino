@@ -2,9 +2,11 @@
 
 // GPS RECEIVER
 #include <SoftwareSerial.h>
+
 // TEMPERATURE SENSOR
 #include <OneWire.h>
 #include <DallasTemperature.h>
+
 // SD CARD
 #include <SD.h>
 
@@ -49,6 +51,11 @@ DallasTemperature sensors(&oneWire); // Pass oneWire reference to Dallas Tempera
 // SD CARD
 File GPSFile;
 const int CS = 10; // Chip Select Pin for communication with SD card.
+
+// TPL5110
+const int DonePin = 4; // Signal to timer TPL5110
+int counter = 0;
+int measPoints = 20; // Define how many measurment points you want to collect. 
 // ###################################################################################################
 
 // Declare structure for NAV-POSLLH message
@@ -145,13 +152,45 @@ void setup() {
     Serial.println("initialization of SD card failed!");
     return;
   }
+  // Write separation line in .txt file
+  GPSFile = SD.open("GPS.txt", FILE_WRITE);
+  GPSFile.println("-----------------------------------");
+  GPSFile.println("");
+  GPSFile.close();
+
+  // TPL5110
+  pinMode(DonePin,OUTPUT);
+  digitalWrite(DonePin, LOW);
 }
+
+
 void loop() {
   if ( processGPS() ) {
     Serial.print("I'm here: ");
-    Serial.print("iTOW:");      Serial.print(posllh.iTOW);
-    Serial.print(" lat/lon: "); Serial.print(posllh.lat / 10000000.0f); Serial.print(","); Serial.print(posllh.lon / 10000000.0f);
-    Serial.print(" height: ");  Serial.print(posllh.height / 1000.0f);
+    Serial.print("iTOW: ");
+    Serial.print(posllh.iTOW);
+    Serial.print(" lat/lon: "); 
+    Serial.print(posllh.lat / 10000000.0f);
+    Serial.print(","); 
+    Serial.print(posllh.lon / 10000000.0f);
+    Serial.print(" height: ");  
+    Serial.print(posllh.height / 1000.0f);
     Serial.println();
+
+    GPSFile = SD.open("GPS.txt", FILE_WRITE);
+    GPSFile.print("iTOW: ");
+    GPSFile.println(posllh.iTOW);
+    GPSFile.print("lat/lon: ");
+    GPSFile.print(posllh.lat / 10000000.0f); 
+    GPSFile.print(", ");
+    GPSFile.println(posllh.lon / 10000000.0f);
+    GPSFile.print("height: ");
+    GPSFile.println(posllh.height / 1000.0f);
+    GPSFile.close();
+
+    counter = counter + 1;
+    if (counter == measPoints) {
+      digitalWrite(DonePin, HIGH); // toggle DONE so TPL knows to cut power!
+    }
   }
 }
