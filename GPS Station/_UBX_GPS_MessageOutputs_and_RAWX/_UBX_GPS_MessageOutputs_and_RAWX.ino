@@ -138,9 +138,4 @@ void loop() {
     Serial.print("rcvTow:");      Serial.print(rawx.rcvTow);
     Serial.println();
   }
-  /*
-    // read from port serial, send to port Serial:
-    int Coord = serial.read();
-    Serial.write(Coord);
-  */
 }
