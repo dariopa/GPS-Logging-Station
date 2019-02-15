@@ -1,11 +1,14 @@
 // Arduino; TRANSMITTER
 #include <SoftwareSerial.h>
 
-const byte rxPin = 8;
-const byte txPin = 9;
+const byte rxPin_GPS = 8;
+const byte txPin_GPS = 9;
+const byte rxPin_XBee = 1;
+const byte txPin_XBee = 0;
 
 // Connect the GPS RX/TX to arduino pins 8 and 9
-SoftwareSerial serial = SoftwareSerial(rxPin, txPin);
+SoftwareSerial serial_GPS = SoftwareSerial(rxPin_GPS, txPin_GPS);
+SoftwareSerial serial_Xbee = SoftwareSerial(rxPin_XBee, txPin_XBee);
 
 #include <SD.h>
 
@@ -67,8 +70,8 @@ bool processGPS() {
   static unsigned char checksum[2];
   const int payloadSize = sizeof(NAV_POSLLH);
 
-  while ( serial.available() ) {
-    byte c = serial.read();
+  while ( serial_GPS.available() ) {
+    byte c = serial_GPS.read();
     if ( fpos < 2 ) {
       if ( c == UBX_HEADER[fpos] )
         fpos++;
@@ -104,15 +107,18 @@ bool processGPS() {
 
 void setup()
 {
-  serial.begin(9600);
+  serial_GPS.begin(9600);
+  serial_Xbee.begin(9600);
   Serial.begin(9600);
   // initialize both serial ports:
-  pinMode(rxPin, INPUT);
-  pinMode(txPin, OUTPUT);
+  pinMode(rxPin_GPS, INPUT);
+  pinMode(txPin_GPS, OUTPUT);
+  pinMode(rxPin_XBee, INPUT);
+  pinMode(txPin_XBee, OUTPUT);
 
   // send configuration data in UBX protocol
   for (int i = 0; i < sizeof(UBLOX_INIT); i++) {
-    serial.write( pgm_read_byte(UBLOX_INIT + i) );
+    serial_GPS.write( pgm_read_byte(UBLOX_INIT + i) );
     delay(10); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
   }
 
@@ -133,8 +139,14 @@ void loop() {
     Serial.print(" height: ");  Serial.print(posllh.height / 1000.0f);
     Serial.println();
 
+    serial_Xbee.print("I'm here: ");
+    serial_Xbee.print("iTOW:");      serial_Xbee.print(posllh.iTOW);
+    serial_Xbee.print(" lat/lon: "); serial_Xbee.print(posllh.lat / 10000000.0f); serial_Xbee.print(","); serial_Xbee.print(posllh.lon / 10000000.0f);
+    serial_Xbee.print(" height: ");  serial_Xbee.print(posllh.height / 1000.0f);
+    serial_Xbee.println();
+
     // Store data on SD card
-    GPSFile = SD.open("GPS.txt", FILE_WRITE);
+    GPSFile = SD.open("GPS_ROVER.txt", FILE_WRITE);
     GPSFile.print("iTOW: ");
     GPSFile.println(posllh.iTOW);
     GPSFile.print("lat/lon: ");
