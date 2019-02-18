@@ -16,7 +16,7 @@ SoftwareSerial serial = SoftwareSerial(rxPin, txPin);
 const char UBLOX_INIT[] PROGMEM = {
   // Revert to default configuration
   0xB5, 0x62, 0x06, 0x09, 0x0D, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0x03, 0x1B, 0x9A,
-  
+
   // Disable NMEA
   0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x24, // GxGGA off
   0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0xF0, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x2B, // GxGLL off
@@ -41,38 +41,40 @@ const char UBLOX_INIT[] PROGMEM = {
 const unsigned char UBX_HEADER[] = { 0xB5, 0x62 };
 
 struct RXM_RAWX {
-  unsigned char cls;
-  unsigned char id;
-  unsigned short len;
-  double rcvTow;
-  unsigned short week;
-  signed char leapS;
-  unsigned char numMeas;
-  char recStat;
-  unsigned char reserved1;
+  struct HEADER {
+    unsigned char cls;
+    unsigned char id;
+    unsigned short len;
+    double rcvTow;
+    unsigned short week;
+    signed char leapS;
+    unsigned char numMeas;
+    char recStat;
+    unsigned char reserved1;
+  } header;
 
   // Start of repeated block (numMeas times)
-  double prMes;
-  double cpMes;
-  float doMes;
-  unsigned char gnssId;
-  unsigned char svId;
-  unsigned char reserved2;
-  unsigned char freqId;
-  unsigned short locktime;
-  unsigned char cno;
-  char prdStdev;
-  char cpStdev;
-  char doStdev;
-  char trkStat;
-  unsigned char reserved3;
-};
-
-RXM_RAWX rawx;
+  struct RXM_REPEATED {
+    double prMes;
+    double cpMes;
+    float doMes;
+    unsigned char gnssId;
+    unsigned char svId;
+    unsigned char reserved2;
+    unsigned char freqId;
+    unsigned short locktime;
+    unsigned char cno;
+    char prdStdev;
+    char cpStdev;
+    char doStdev;
+    char trkStat;
+    unsigned char reserved3;
+  } rxm_repeated[30];
+} rawx;
 
 void calcChecksum(unsigned char* CK) {
   memset(CK, 0, 2);
-  for (int i = 0; i < (int)sizeof(RXM_RAWX); i++) {
+  for (int i = 0; i < (int)sizeof(rawx.header) + rawx.header.numMeas * (int)sizeof(rawx.rxm_repeated[0]); i++) {
     CK[0] += ((unsigned char*)(&rawx))[i];
     CK[1] += CK[0];
   }
@@ -81,7 +83,7 @@ void calcChecksum(unsigned char* CK) {
 bool processGPS() {
   static int fpos = 0;
   static unsigned char checksum[2];
-  const int payloadSize = sizeof(RXM_RAWX);
+  int payloadSize = sizeof(rawx.header);
 
   while ( serial.available() ) {
     byte c = serial.read();
@@ -92,8 +94,12 @@ bool processGPS() {
         fpos = 0;
     }
     else {
+      if (fpos == 12) {
+        payloadSize += rawx.header.numMeas * (int)sizeof(rawx.rxm_repeated[0]);
+      }
       if ( (fpos - 2) < payloadSize )
         ((unsigned char*)(&rawx))[fpos - 2] = c;
+        
       fpos++;
 
       if ( fpos == (payloadSize + 2) ) {
@@ -114,7 +120,11 @@ bool processGPS() {
       }
     }
   }
-  Serial.println("returns false!");
+  Serial.println("-----");
+  Serial.println(fpos);
+  Serial.println(payloadSize);
+  Serial.println(rawx.header.numMeas);
+  //delay(1000);
   return false;
 }
 
@@ -135,7 +145,8 @@ void setup()
 
 void loop() {
   if ( processGPS() ) {
-    Serial.print("rcvTow:");      Serial.print(rawx.rcvTow);
+    Serial.print("rcvTow:");     // Serial.print(rawx.rxm_repeated[1].rcvTow);
+    
     Serial.println();
   }
 }
