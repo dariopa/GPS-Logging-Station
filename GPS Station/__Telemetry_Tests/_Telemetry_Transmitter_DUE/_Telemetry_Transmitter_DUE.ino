@@ -117,10 +117,8 @@ void setup()
 
 void loop() {
   if ( processGPS() ) {
-    Serial.print("I'm here: ");
     Serial.print("iTOW:");      Serial.print(posllh.iTOW);
     Serial.print(" lat/lon: "); Serial.print(posllh.lat / 10000000.0f); Serial.print(","); Serial.print(posllh.lon / 10000000.0f);
-    Serial.print(" height: ");  Serial.print(posllh.height / 1000.0f);
     Serial.println();
 
     // Store data on SD card
