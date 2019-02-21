@@ -24,9 +24,9 @@ const char UBLOX_INIT[] PROGMEM = {
   0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x01, 0x02, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x13, 0xBE, //NAV-POSLLH on
 
   // Rate
-  0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xE8, 0x03, 0x01, 0x00, 0x01, 0x00, 0x01, 0x39, //(1Hz)
+  // 0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xE8, 0x03, 0x01, 0x00, 0x01, 0x00, 0x01, 0x39, //(1Hz)
   // 0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xD0, 0x07, 0x01, 0x00, 0x01, 0x00, 0xED, 0xBD, // (0.5Hz)
-  // 0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xB8, 0x0B, 0x01, 0x00, 0x01, 0x00, 0xD9, 0x41, // (0.33Hz)
+  0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xB8, 0x0B, 0x01, 0x00, 0x01, 0x00, 0xD9, 0x41, // (0.33Hz)
 
 };
 
@@ -97,9 +97,9 @@ bool processGPS() {
 
 void setup()
 {
+  // initialize both serial ports:
   Serial.begin(9600);
   Serial1.begin(9600);
-  // initialize both serial ports:
   // send configuration data in UBX protocol
   for (int i = 0; i < sizeof(UBLOX_INIT); i++) {
     Serial1.write( pgm_read_byte(UBLOX_INIT + i) );
@@ -113,6 +113,7 @@ void setup()
     Serial.println("initialization of SD card failed!");
     return;
   }
+  Serial.println("initialization done.");
 }
 
 void loop() {
@@ -122,15 +123,15 @@ void loop() {
     Serial.println();
 
     // Store data on SD card
-    GPSFile = SD.open("GPS_ROVER.txt", FILE_WRITE);
-    GPSFile.print("iTOW: ");
-    GPSFile.println(posllh.iTOW);
-    GPSFile.print("lat/lon: ");
-    GPSFile.print(posllh.lat / 10000000.0f);
-    GPSFile.print(", ");
-    GPSFile.println(posllh.lon / 10000000.0f);
-    GPSFile.print("height: ");
-    GPSFile.println(posllh.height / 1000.0f);
-    GPSFile.close();
+    GPSFile = SD.open("ROVER.txt", FILE_WRITE);
+    if (GPSFile) {
+      GPSFile.print("iTOW: ");
+      GPSFile.print(posllh.iTOW);
+      GPSFile.print("lat/lon: ");
+      GPSFile.print(posllh.lat / 10000000.0f);
+      GPSFile.print(", ");
+      GPSFile.println(posllh.lon / 10000000.0f);
+      GPSFile.close();
+    }
   }
 }
