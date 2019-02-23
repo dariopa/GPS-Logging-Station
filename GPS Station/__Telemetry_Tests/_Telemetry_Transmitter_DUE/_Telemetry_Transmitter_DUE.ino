@@ -119,7 +119,7 @@ void setup()
 void loop() {
   if ( processGPS() ) {
     Serial.print("iTOW:");      Serial.print(posllh.iTOW);
-    Serial.print(" lat/lon: "); Serial.print(posllh.lat / 10000000.0f); Serial.print(","); Serial.print(posllh.lon / 10000000.0f);
+    Serial.print(" lat/lon: "); Serial.print(posllh.lat / 10000000., 6); Serial.print(","); Serial.print(posllh.lon / 10000000., 6);
     Serial.println();
 
     // Store data on SD card
@@ -128,9 +128,9 @@ void loop() {
       GPSFile.print("iTOW: ");
       GPSFile.print(posllh.iTOW);
       GPSFile.print("lat/lon: ");
-      GPSFile.print(posllh.lat / 10000000.0f);
+      GPSFile.print(posllh.lat / 10000000., 6);
       GPSFile.print(", ");
-      GPSFile.println(posllh.lon / 10000000.0f);
+      GPSFile.println(posllh.lon / 10000000., 6);
       GPSFile.close();
     }
   }
