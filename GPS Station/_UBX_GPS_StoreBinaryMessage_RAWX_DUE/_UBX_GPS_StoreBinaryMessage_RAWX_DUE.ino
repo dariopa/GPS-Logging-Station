@@ -1,4 +1,12 @@
-// char Coord [100];
+// RETRIEVE RAWX MESSAGE FOR RINEX GENERATION.
+
+// Microcontroller: Arduino DUE
+// GPS Receiver: NEO-M8P-2 (https://www.sparkfun.com/products/15005)
+
+#include <SD.h>
+
+File binaryFile;
+const int CS = 10; // ChipSelect
 
 const char UBLOX_INIT[] PROGMEM = {
   // Disable NMEA
@@ -16,9 +24,9 @@ const char UBLOX_INIT[] PROGMEM = {
   0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x02, 0x15, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x27, 0x4B, // RXM-RAWX on
 
   // Rate
-  //0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xE8, 0x03, 0x01, 0x00, 0x01, 0x00, 0x01, 0x39, //(1Hz)
+  0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xE8, 0x03, 0x01, 0x00, 0x01, 0x00, 0x01, 0x39, //(1Hz)
   // 0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xD0, 0x07, 0x01, 0x00, 0x01, 0x00, 0xED, 0xBD, // (0.5Hz)
-  0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xB8, 0x0B, 0x01, 0x00, 0x01, 0x00, 0xD9, 0x41, // (0.33Hz)
+  // 0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xB8, 0x0B, 0x01, 0x00, 0x01, 0x00, 0xD9, 0x41, // (0.33Hz)
 
 };
 
@@ -32,12 +40,27 @@ void setup() {
     Serial.write( pgm_read_byte(UBLOX_INIT + i) );
     delay(10); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
   }
+
+  // SD CARD
+  // Initialize SD Card
+  pinMode(CS, OUTPUT);
+  if (!SD.begin(CS)) {
+    Serial.println("Initialization of SD card failed - Freeze!");
+    while (1) {}
+  }
+  else {
+    Serial.println("Initialization done.");
+  }
 }
 
 void loop() {
   if (Serial1.available()) {
     // read from port serial, send to port Serial:
-    int Coord = Serial1.read();
+    char Coord[300] = {Serial1.read()};
     Serial.write(Coord);
+    binaryFile = SD.open("Data.bin", FILE_WRITE);
+    if (binaryFile) {
+      binaryFile.println(Coord);
+    }
   }
 }
