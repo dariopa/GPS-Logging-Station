@@ -24,22 +24,15 @@ const char UBLOX_INIT[] PROGMEM = {
   0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x02, 0x15, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x27, 0x4B, // RXM-RAWX on
 
   // Rate
-  0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xE8, 0x03, 0x01, 0x00, 0x01, 0x00, 0x01, 0x39, //(1Hz)
+  // 0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xE8, 0x03, 0x01, 0x00, 0x01, 0x00, 0x01, 0x39, //(1Hz)
   // 0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xD0, 0x07, 0x01, 0x00, 0x01, 0x00, 0xED, 0xBD, // (0.5Hz)
-  // 0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xB8, 0x0B, 0x01, 0x00, 0x01, 0x00, 0xD9, 0x41, // (0.33Hz)
+  0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xB8, 0x0B, 0x01, 0x00, 0x01, 0x00, 0xD9, 0x41, // (0.33Hz)
 
 };
 
 void setup() {
   Serial.begin(9600);
   Serial1.begin(9600);
-  delay(3000);
-  // send configuration data in UBX protocol
-  for (int i = 0; i < sizeof(UBLOX_INIT); i++) {
-    Serial1.write( pgm_read_byte(UBLOX_INIT + i) );
-    Serial.write( pgm_read_byte(UBLOX_INIT + i) );
-    delay(10); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
-  }
 
   // SD CARD
   // Initialize SD Card
@@ -51,16 +44,27 @@ void setup() {
   else {
     Serial.println("Initialization done.");
   }
+
+  // send configuration data in UBX protocol
+  for (int i = 0; i < sizeof(UBLOX_INIT); i++) {
+    Serial1.write( pgm_read_byte(UBLOX_INIT + i) );
+    Serial.write( pgm_read_byte(UBLOX_INIT + i) );
+    delay(10); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
+  }
+  delay(4000);
 }
 
 void loop() {
   if (Serial1.available()) {
-    // read from port serial, send to port Serial:
-    char Coord[300] = {Serial1.read()};
-    Serial.write(Coord);
-    binaryFile = SD.open("Data.bin", FILE_WRITE);
-    if (binaryFile) {
-      binaryFile.println(Coord);
+    int ci = Serial1.read();
+    if (ci == -1) {
+      Serial.println("Read was not successfull!");
+      return;
     }
+    char c = ci;
+    Serial.write(c);
+    binaryFile = SD.open("Data.bin", FILE_WRITE);
+    binaryFile.write(c);
+    binaryFile.close();
   }
 }
