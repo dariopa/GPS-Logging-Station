@@ -51,7 +51,7 @@ void setup() {
     Serial.write( pgm_read_byte(UBLOX_INIT + i) );
     delay(10); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
   }
-  delay(4000);
+  delay(10000);
 }
 
 void loop() {
