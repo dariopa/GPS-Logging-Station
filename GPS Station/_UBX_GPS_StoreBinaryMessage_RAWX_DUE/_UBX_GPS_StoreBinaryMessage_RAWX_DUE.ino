@@ -47,6 +47,7 @@ void setup() {
   else {
     Serial.println("Initialization done.");
   }
+binaryFile = SD.open("Data.bin", FILE_WRITE);
 
   // send configuration data in UBX protocol
   for (int i = 0; i < sizeof(UBLOX_INIT); i++) {
@@ -64,9 +65,7 @@ void loop() {
       return;
     }
     char c = ci;
-    // Serial.write(c);
-    binaryFile = SD.open("Data.bin", FILE_WRITE);
     binaryFile.write(c);
-    binaryFile.close();
   }
+  binaryFile.flush();  
 }
