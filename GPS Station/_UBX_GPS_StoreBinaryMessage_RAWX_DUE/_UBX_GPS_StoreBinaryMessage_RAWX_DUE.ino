@@ -20,7 +20,7 @@ const char UBLOX_INIT[] PROGMEM = {
   // Disable UBX
   0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x02, 0x15, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x26, 0x46, // RXM-RAWX off
   0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x02, 0x13, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x24, 0x38, // RXM-SFRBX off
-  
+
 
   // Enable UBX
   0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x02, 0x15, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x27, 0x4B, // RXM-RAWX on
@@ -47,7 +47,7 @@ void setup() {
   else {
     Serial.println("Initialization done.");
   }
-binaryFile = SD.open("Data.bin", FILE_WRITE);
+
 
   // send configuration data in UBX protocol
   for (int i = 0; i < sizeof(UBLOX_INIT); i++) {
@@ -58,6 +58,7 @@ binaryFile = SD.open("Data.bin", FILE_WRITE);
 }
 
 void loop() {
+
   if (Serial1.available()) {
     int ci = Serial1.read();
     if (ci == -1) {
@@ -65,7 +66,9 @@ void loop() {
       return;
     }
     char c = ci;
+    binaryFile = SD.open("Data.bin", FILE_WRITE);
     binaryFile.write(c);
+    binaryFile.close();
   }
-  binaryFile.flush();  
+
 }
