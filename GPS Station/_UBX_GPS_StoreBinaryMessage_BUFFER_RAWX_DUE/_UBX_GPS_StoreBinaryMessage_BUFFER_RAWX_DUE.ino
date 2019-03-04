@@ -70,6 +70,7 @@ void loop() {
     int ci = Serial1.read();
     if (ci == -1) {
       Serial.println("Reading failed!");
+      return;
     }
     char c = ci;
     Serial.write(c);
@@ -82,4 +83,4 @@ void loop() {
     binaryFile.write(buf , buf_length);
     binaryFile.close();
   }
-}
+} // 
