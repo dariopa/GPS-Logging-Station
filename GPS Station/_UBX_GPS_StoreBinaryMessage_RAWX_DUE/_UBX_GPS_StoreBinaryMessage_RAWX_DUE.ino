@@ -58,6 +58,8 @@ void setup() {
     Serial1.write( pgm_read_byte(UBLOX_INIT + i) );
     delay(10); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
   }
+  
+  binaryFile = SD.open("Data.bin", FILE_WRITE);
 }
 
 void loop() {
@@ -70,8 +72,8 @@ void loop() {
     }
     char c = ci;
     Serial.write(c);
-    binaryFile = SD.open("Data.bin", FILE_WRITE);
+
     binaryFile.write(c);
-    binaryFile.close();
+    binaryFile.flush();
   }
 }
