@@ -8,6 +8,8 @@
 File binaryFile;
 const int CS = 10; // ChipSelect
 
+int bps = 9600;
+
 const char UBLOX_INIT[] PROGMEM = {
 
   // 0xB5, 0x62, 0x06, 0x00, 0x14, 0x00, 0x01, 0x00, 0x00, 0x00, 0xD0, 0x08, 0x00, 0x00, 0x00, 0xC2, 0x01, 0x00, 0x23, 0x00, 0x23, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFC, 0x1E, // change baud rate to 115200
@@ -38,8 +40,8 @@ const char UBLOX_INIT[] PROGMEM = {
 };
 
 void setup() {
-  Serial.begin(9600);
-  Serial1.begin(9600);
+  Serial.begin(bps);
+  Serial1.begin(bps);
 
   // SD CARD
   // Initialize SD Card
@@ -63,24 +65,21 @@ void setup() {
 void loop() {
 
   char buf[600];
-  int counter = 0;
+  int buf_length = 0;
   while (Serial1.available()) {
-    char c = Serial1.read();
-    buf[counter] = c;
-    counter += 1;
-    Serial.println(counter);
-  }
-  
-  if (counter != 0) {
-    char newBuf[counter + 1];
-
-    for (int i = 0; i <= counter; i++) {
-      newBuf[i] = buf[i];
+    int ci = Serial1.read();
+    if (ci == -1) {
+      Serial.println("Reading failed!");
     }
-    Serial.write(buf);
-    Serial.write(newBuf);
+    char c = ci;
+    Serial.write(c);
+    buf[buf_length] = c;
+    buf_length += 1;
+  }
+
+  if (buf_length != 0) {
     binaryFile = SD.open("Data.bin", FILE_WRITE);
-    binaryFile.write(newBuf);
+    binaryFile.write(buf , buf_length);
     binaryFile.close();
   }
 }
