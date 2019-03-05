@@ -35,7 +35,7 @@ const char UBLOX_INIT[] PROGMEM = {
   // 0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xB8, 0x0B, 0x01, 0x00, 0x01, 0x00, 0xD9, 0x41, // (0.33Hz)
 
 
-  0xB5, 0x62, 0x06, 0x00, 0x14, 0x00, 0x01, 0x00, 0x00, 0x00, 0xD0, 0x08, 0x00, 0x00, 0x00, 0xC2, 0x01, 0x00, 0x23, 0x00, 0x23, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFC, 0x1E, // change baud rate to 115200
+  // 0xB5, 0x62, 0x06, 0x00, 0x14, 0x00, 0x01, 0x00, 0x00, 0x00, 0xD0, 0x08, 0x00, 0x00, 0x00, 0xC2, 0x01, 0x00, 0x23, 0x00, 0x23, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFC, 0x1E, // change baud rate to 115200
 
 };
 
@@ -47,7 +47,7 @@ void setup() {
   // Initialize SD Card
   pinMode(CS, OUTPUT);
   if (!SD.begin(CS)) {
-    Serial.println("Initialization of SD card failed - Freeze!");
+    Serial.println("Initialization of SD card failed");
   }
   else {
     Serial.println("Initialization done.");
@@ -59,19 +59,16 @@ void setup() {
     Serial1.write( pgm_read_byte(UBLOX_INIT + i) );
     delay(10); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
   }
-<<<<<<< HEAD
+  
   binaryFile = SD.open("Data.bin", FILE_WRITE);
-
+  /*
   // Clear the serial buffer and switch the baud rate
   Serial1.flush(); // wait for last transmitted data to be sent
   Serial1.begin(115200);
-  while (Serial1.available()) Serial1.read(); // empty  out possible garbage from input buffer
-                                              // if the device was sending data while you changed the baud rate, the info in the input buffer
-                                              // is corrupted.
-=======
-  
-  binaryFile = SD.open("Data.bin", FILE_WRITE);
->>>>>>> e5a15ac01df8af2f4680aad75db6d16a6cd367c9
+  while (Serial1.available()) Serial1.read(); 
+  // empty  out possible garbage from input buffer
+  // if the device was sending data while you changed the baud rate, the info in the input buffer
+  // is corrupted.*/
 }
 
 void loop() {
@@ -84,10 +81,7 @@ void loop() {
     }
     char c = ci;
     Serial.write(c);
-<<<<<<< HEAD
-=======
 
->>>>>>> e5a15ac01df8af2f4680aad75db6d16a6cd367c9
     binaryFile.write(c);
     binaryFile.flush();
   }
