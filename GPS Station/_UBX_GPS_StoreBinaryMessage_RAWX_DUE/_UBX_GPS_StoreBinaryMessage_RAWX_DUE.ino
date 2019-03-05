@@ -59,6 +59,7 @@ void setup() {
     Serial1.write( pgm_read_byte(UBLOX_INIT + i) );
     delay(10); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
   }
+<<<<<<< HEAD
   binaryFile = SD.open("Data.bin", FILE_WRITE);
 
   // Clear the serial buffer and switch the baud rate
@@ -67,6 +68,10 @@ void setup() {
   while (Serial1.available()) Serial1.read(); // empty  out possible garbage from input buffer
                                               // if the device was sending data while you changed the baud rate, the info in the input buffer
                                               // is corrupted.
+=======
+  
+  binaryFile = SD.open("Data.bin", FILE_WRITE);
+>>>>>>> e5a15ac01df8af2f4680aad75db6d16a6cd367c9
 }
 
 void loop() {
@@ -79,6 +84,10 @@ void loop() {
     }
     char c = ci;
     Serial.write(c);
+<<<<<<< HEAD
+=======
+
+>>>>>>> e5a15ac01df8af2f4680aad75db6d16a6cd367c9
     binaryFile.write(c);
     binaryFile.flush();
   }

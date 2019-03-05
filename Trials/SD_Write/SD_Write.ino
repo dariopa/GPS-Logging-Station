@@ -19,6 +19,7 @@ void setup()
     return;
   }
   Serial.println("initialization done.");
+  myFile = SD.open("test.txt", FILE_WRITE);
 
 }
 
@@ -26,14 +27,14 @@ void loop()
 {
   // open the file. note that only one file can be open at a time,
   // so you have to close this one before opening another.
-  myFile = SD.open("test.txt", FILE_WRITE);
+  
 
   if (myFile) {
     Serial.print("Writing to test.txt...");
     myFile.println("testing 1, 2, 3.");
 
     // close the file:
-    myFile.close();
+    myFile.flush();
     Serial.println("done.");
 
   } else {
