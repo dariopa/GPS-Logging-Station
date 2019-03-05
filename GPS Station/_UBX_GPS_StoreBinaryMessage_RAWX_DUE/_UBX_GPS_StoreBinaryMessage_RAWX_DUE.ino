@@ -10,7 +10,7 @@ const int CS = 10; // ChipSelect
 
 unsigned long startTime;
 unsigned long currTime;
-float measTime = 2; // in Minutes!
+float measTime = 5; // in Minutes!
 
 const char UBLOX_INIT[] PROGMEM = {
 
