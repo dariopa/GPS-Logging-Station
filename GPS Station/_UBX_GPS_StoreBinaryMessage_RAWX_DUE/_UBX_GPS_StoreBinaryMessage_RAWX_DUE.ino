@@ -87,16 +87,14 @@ void loop() {
       return;
     }
     char c = ci;
-    Serial.write(c);
-
     binaryFile.write(c);
     binaryFile.flush();
-
-    currTime = millis();
-    if (currTime - startTime > measTime * 60 * 1000) {
-      binaryFile.close();
-      delay(20);
-      while (1) {}
-    }
+  }
+  
+  currTime = millis();
+  if (currTime - startTime > measTime * 60 * 1000) {
+    binaryFile.close();
+    delay(20);
+    while (1) {}
   }
 }
