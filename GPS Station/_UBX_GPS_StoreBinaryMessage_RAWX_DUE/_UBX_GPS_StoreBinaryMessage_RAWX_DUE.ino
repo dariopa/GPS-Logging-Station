@@ -8,6 +8,10 @@
 File binaryFile;
 const int CS = 10; // ChipSelect
 
+unsigned long startTime;
+unsigned long currTime;
+float measTime = 2; // in Minutes!
+
 const char UBLOX_INIT[] PROGMEM = {
 
 
@@ -52,15 +56,16 @@ void setup() {
   else {
     Serial.println("Initialization done.");
   }
-
+  delay(1000);
 
   // send configuration data in UBX protocol
   for (int i = 0; i < sizeof(UBLOX_INIT); i++) {
     Serial1.write( pgm_read_byte(UBLOX_INIT + i) );
     delay(10); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
   }
-
+  delay(1000);
   binaryFile = SD.open("Data.bin", FILE_WRITE);
+  delay(1000);
   /*
     // Clear the serial buffer and switch the baud rate
     Serial1.flush(); // wait for last transmitted data to be sent
@@ -68,7 +73,9 @@ void setup() {
     while (Serial1.available()) Serial1.read();
     // empty  out possible garbage from input buffer
     // if the device was sending data while you changed the baud rate, the info in the input buffer
-    // is corrupted.*/
+    // is corrupted.
+    delay(1000);*/
+  startTime = millis();
 }
 
 void loop() {
@@ -84,5 +91,12 @@ void loop() {
 
     binaryFile.write(c);
     binaryFile.flush();
+
+    currTime = millis();
+    if (currTime - startTime > measTime * 60 * 1000) {
+      binaryFile.close();
+      delay(20);
+      while (1) {}
+    }
   }
 }
