@@ -8,7 +8,9 @@
 File binaryFile;
 const int CS = 10; // ChipSelect
 
-int bps = 9600;
+unsigned long startTime;
+unsigned long currTime;
+float measTime = 2; // in Minutes
 
 const char UBLOX_INIT[] PROGMEM = {
 
@@ -40,38 +42,45 @@ const char UBLOX_INIT[] PROGMEM = {
 };
 
 void setup() {
-  Serial.begin(bps);
-  Serial1.begin(bps);
+  Serial.begin(9600);
+  Serial1.begin(9600);
 
   // SD CARD
   // Initialize SD Card
   pinMode(CS, OUTPUT);
   if (!SD.begin(CS)) {
-    Serial.println("Initialization of SD card failed - Freeze!");
-    while (1) {}
+    Serial.println("Initialization of SD card failed");
   }
   else {
     Serial.println("Initialization done.");
   }
-
+  delay(1000);
 
   // send configuration data in UBX protocol
   for (int i = 0; i < sizeof(UBLOX_INIT); i++) {
     Serial1.write( pgm_read_byte(UBLOX_INIT + i) );
     delay(10); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
   }
+  delay(15000);
+  binaryFile = SD.open("Rov.bin", FILE_WRITE);
+  delay(1000);
+  /*
+    // Clear the serial buffer and switch the baud rate
+    Serial1.flush(); // wait for last transmitted data to be sent
+    Serial1.begin(115200);
+    while (Serial1.available()) Serial1.read();
+    // empty  out possible garbage from input buffer
+    // if the device was sending data while you changed the baud rate, the info in the input buffer
+    // is corrupted.
+    delay(1000);*/
+  startTime = millis();
 }
 
 void loop() {
-
   char buf[600];
   int buf_length = 0;
   while (Serial1.available()) {
     int ci = Serial1.read();
-    if (ci == -1) {
-      Serial.println("Reading failed!");
-      return;
-    }
     char c = ci;
     Serial.write(c);
     buf[buf_length] = c;
@@ -79,8 +88,14 @@ void loop() {
   }
 
   if (buf_length != 0) {
-    binaryFile = SD.open("Data.bin", FILE_WRITE);
     binaryFile.write(buf , buf_length);
-    binaryFile.close();
+    binaryFile.flush();
   }
-} // 
+
+  currTime = millis();
+  if (currTime - startTime > measTime * 60 * 1000) {
+    binaryFile.close();
+    delay(20);
+    while (1) {}
+  }
+}
