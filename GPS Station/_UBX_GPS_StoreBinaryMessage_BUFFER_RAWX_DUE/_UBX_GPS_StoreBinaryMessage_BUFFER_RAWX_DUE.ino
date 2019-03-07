@@ -82,7 +82,6 @@ void loop() {
   while (Serial1.available()) {
     int ci = Serial1.read();
     char c = ci;
-    Serial.write(c);
     buf[buf_length] = c;
     buf_length += 1;
   }
