@@ -64,7 +64,7 @@ void setup() {
     delay(10); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
   }
   delay(15000);
-  binaryFile = SD.open("Data.bin", FILE_WRITE);
+  binaryFile = SD.open("Rov.bin", FILE_WRITE);
   delay(1000);
   /*
     // Clear the serial buffer and switch the baud rate
