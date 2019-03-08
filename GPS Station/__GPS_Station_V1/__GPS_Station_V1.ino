@@ -56,6 +56,7 @@ DallasTemperature sensors(&oneWire); // Pass oneWire reference to Dallas Tempera
 int analogValue; // Analog value that Arduino reads
 const float maxVoltageBattery = 4.2; // Maximum voltage on battery when charged
 const float maxVoltageArduino = 3; // Maximum voltage Arduino should read
+const float lowVolt = 3.35;
 const float vpp = maxVoltageBattery / 1023; // Volts per point <-> accuracy of measurement
 const float voltageRatio = maxVoltageBattery / maxVoltageArduino; // Ratio to mathematically upscale voltage
 float voltage; // Real voltage
@@ -75,64 +76,56 @@ float measTime = 2; // in Minutes!
 // ###################################################################################################
 
 void setup() {
-  // Initialize both serial ports:
+  // Initialize all serial ports:
   Serial.begin(9600); // Start serial port
+  
   pinMode(RX_PIN_GPS, INPUT);
   pinMode(TX_PIN_GPS, OUTPUT);
   serialGPS.begin(9600); // Start serial port with GPS receiver
+  
   pinMode(RX_PIN_XBEE, INPUT);
   pinMode(TX_PIN_XBEE, OUTPUT);
   serialXBEE.begin(9600); // Start serial port with XBEE module
-
   delay(5);
 
   // Initialise TPL5110
   pinMode(donePin, OUTPUT);
   digitalWrite(donePin, LOW);
-
   delay(5);
 
-  gpsConfig; // configure the GPS to output RAWX and SFRBX
-
-  delay(500);
-
-  sdInit; // Initialize SD card
-
-  delay(500);
-
   // Battery Management System
-  if ( !bms() ) {
+  if ( bms() ) {
     for (int i= 0; i < 50; i++) {
       serialXBEE.println("COME PICK ME UP!");
     }
     serialXBEE.flush();
-    
-    delay(5);
-    
-    digitalWrite(donePin, HIGH);
+    delay(5); 
+    digitalWrite(donePin, HIGH); // switch off whole system
   }
-
   delay(500);
-
+  
+  gpsConfig; // configure the GPS to output RAWX and SFRBX
+  delay(15000);
+  
+  sdInit; // Initialize SD card
+  delay(500);
+  
   // Open GPS File
   gpsFile = SD.open("ROV.bin", FILE_WRITE);
-
   delay(500);
 
   startTime = millis();
 }
 
 void loop() {
-  char buf[1300];
-  int bufLen = 0;
-  gpsData(buf, bufLen);
-
+  char buf[1300]; // initialize buffer every loop
+  int bufLen = 0; // reset buffer length to zero at the beginning of every loop
+  gpsData(buf, bufLen); // read gps messages
+  
   currTime = millis();
   if (currTime - startTime >= (measTime * 60 * 1000)) {
     gpsFile.close();
-
     delay(5);
-
     digitalWrite(donePin, HIGH); // toggle DONE so TPL5110 knows to cut power!
   }
 }
@@ -154,7 +147,6 @@ void sdInit() {
   // Initialize SD Card
   pinMode(CS, OUTPUT);
   if (!SD.begin(CS)) {
-    Serial.println("initialization of SD card failed!");
     return;
   }
 }
@@ -187,11 +179,11 @@ bool bms() {
 
   delay(5);
 
-  if (voltage < 3.35) {
-    return false;
+  if (voltage < lowVolt) {
+    return true;
   }
   else {
-    return true;
+    return false;
   }
 }
 
