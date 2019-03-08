@@ -183,7 +183,7 @@ void gpsData(char buf[], int bufLen, int bufIndex) {
     bufLen += 1;
   }
 
-  if (bufLen != 0) {
+  if (bufIndex != 0) {
     gpsFile.write(buf , bufLen);
     gpsFile.flush();
   }
