@@ -77,6 +77,7 @@ void setup() {
   digitalWrite(donePin, LOW);
   delay(5);
 
+  /*
   // Battery Management System
   if ( bms() ) {
     for (int i = 0; i < 50; i++) {
@@ -86,10 +87,10 @@ void setup() {
     delay(5);
     digitalWrite(donePin, HIGH); // switch off whole system
   }
-  delay(500);
+  delay(500);*/
 
   gpsConfig; // configure the GPS to output RAWX and SFRBX
-  delay(15000);
+  delay(500);
 
   sdInit; // Initialize SD card
   delay(500);
