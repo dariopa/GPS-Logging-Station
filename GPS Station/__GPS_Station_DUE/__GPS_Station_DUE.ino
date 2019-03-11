@@ -63,7 +63,6 @@ unsigned long currTime;
 float measTime = 2; // in Minutes!
 
 // ###################################################################################################
-// ###################################################################################################
 
 void setup() {
   // Initialize all serial ports:
@@ -77,11 +76,7 @@ void setup() {
   digitalWrite(donePin, LOW);
   delay(5);
 
-  // Initialize SD Card
-  pinMode(CS, OUTPUT);
-  if (!SD.begin(CS)) {
-    return;
-  }
+  sdInit(); // Initialize SD Card
   delay(500);
 
   // Battery Management System
@@ -95,11 +90,7 @@ void setup() {
   }
   delay(500);
 
-  // send configuration data in UBX protocol
-  for (int i = 0; i < sizeof(UBLOX_INIT); i++) {
-    Serial1.write( pgm_read_byte(UBLOX_INIT + i) );
-    delay(5); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
-  }
+  gpsConfig(); // send configuration data in UBX protocol
   delay(500);
 
   // Open GPS File
@@ -131,7 +122,20 @@ void loop() {
 }
 
 // ###################################################################################################
-// ###################################################################################################
+
+void sdInit() {
+  pinMode(CS, OUTPUT);
+  if (!SD.begin(CS)) {
+    return;
+  }
+}
+
+void gpsConfig() {
+  for (int i = 0; i < sizeof(UBLOX_INIT); i++) {
+    Serial1.write( pgm_read_byte(UBLOX_INIT + i) );
+    delay(5); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
+  }
+}
 
 bool bms() {
   bmsFile = SD.open("bms.txt", FILE_WRITE);
