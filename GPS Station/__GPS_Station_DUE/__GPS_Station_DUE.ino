@@ -46,7 +46,7 @@ DallasTemperature sensors(&oneWire); // Pass oneWire reference to Dallas Tempera
 int analogValue; // Analog value that Arduino reads
 const float maxVoltageBattery = 4.2; // Maximum voltage on battery when charged
 const float maxVoltageArduino = 3; // Maximum voltage Arduino should read
-const float lowVolt = 3.35;
+const float lowVolt = -3.35; // change sign from - to + in the final version!
 const float vpp = maxVoltageBattery / 1023; // Volts per point <-> accuracy of measurement
 const float voltageRatio = maxVoltageBattery / maxVoltageArduino; // Ratio to mathematically upscale voltage
 float voltage; // Real voltage
@@ -77,7 +77,6 @@ void setup() {
   digitalWrite(donePin, LOW);
   delay(5);
 
-  /*
   // Battery Management System
   if ( bms() ) {
     for (int i = 0; i < 50; i++) {
@@ -87,12 +86,20 @@ void setup() {
     delay(5);
     digitalWrite(donePin, HIGH); // switch off whole system
   }
-  delay(500);*/
-
-  gpsConfig; // configure the GPS to output RAWX and SFRBX
   delay(500);
 
-  sdInit; // Initialize SD card
+  // send configuration data in UBX protocol
+  for (int i = 0; i < sizeof(UBLOX_INIT); i++) {
+    Serial1.write( pgm_read_byte(UBLOX_INIT + i) );
+    delay(5); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
+  }
+  delay(500);
+
+  // Initialize SD Card
+  pinMode(CS, OUTPUT);
+  if (!SD.begin(CS)) {
+    return;
+  }
   delay(500);
 
   // Open GPS File
@@ -103,39 +110,29 @@ void setup() {
 }
 
 void loop() {
-  char buf[bufLen]; // initialize buffer every loop
-  int bufIndex = 0; // reset buffer length to zero at the beginning of every loop
-  gpsData(buf, bufLen, bufIndex); // read gps messages
+  char buf[bufLen];
+  int bufIndex = 0;
+  while (Serial1.available()) {
+    int ci = Serial1.read();
+    char c = ci;
+    buf[bufIndex] = c;
+    bufIndex += 1;
+  }
+
+  if (bufIndex != 0) {
+    gpsFile.write(buf , bufIndex);
+    gpsFile.flush();
+  }
 
   currTime = millis();
-  if (currTime - startTime >= (measTime * 60 * 1000)) {
+  if (currTime - startTime > measTime * 60 * 1000) {
     gpsFile.close();
-    delay(5);
-    digitalWrite(donePin, HIGH); // toggle DONE so TPL5110 knows to cut power!
+    delay(20);
+    digitalWrite(donePin, HIGH);
   }
 }
 
 // ###################################################################################################
-// ###################################################################################################
-
-void gpsConfig() {
-  // send configuration data in UBX protocol
-  for (int i = 0; i < sizeof(UBLOX_INIT); i++) {
-    Serial1.write( pgm_read_byte(UBLOX_INIT + i) );
-    delay(5); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
-  }
-}
-
-// ###################################################################################################
-
-void sdInit() {
-  // Initialize SD Card
-  pinMode(CS, OUTPUT);
-  if (!SD.begin(CS)) {
-    return;
-  }
-}
-
 // ###################################################################################################
 
 bool bms() {
@@ -145,23 +142,20 @@ bool bms() {
   sensors.begin(); // Start up the library. IC Default 9 bit. If you have troubles consider upping it up to 12. Ups the the delay giving the IC more time to process the temperature measurement
   sensors.requestTemperatures(); // Send the command to get temperatures
   temp = sensors.getTempCByIndex(0); // Read the temperature
-
   delay(5);
 
   // VOLTAGE
   analogValue = analogRead(A0);
   voltage = (analogValue * vpp) * voltageRatio;
-
   delay(5);
 
   // STORE DATA
   bmsFile.print("Temperature: ");
   bmsFile.print(temp);
-  bmsFile.print("°C || Voltage: ");
+  bmsFile.print("°C, Voltage: ");
   bmsFile.print(voltage);
   bmsFile.println("V");
   bmsFile.close();
-
   delay(5);
 
   if (voltage < lowVolt) {
@@ -169,23 +163,5 @@ bool bms() {
   }
   else {
     return false;
-  }
-}
-
-// ###################################################################################################
-
-void gpsData(char buf[], int bufLen, int bufIndex) {
-  while (Serial1.available()) {
-    if (bufIndex >= bufLen) {
-      gpsFile.write(buf, bufLen);
-      gpsFile.flush();
-    }
-    buf[bufIndex] = (char)Serial1.read();
-    bufLen += 1;
-  }
-
-  if (bufIndex != 0) {
-    gpsFile.write(buf , bufLen);
-    gpsFile.flush();
   }
 }
