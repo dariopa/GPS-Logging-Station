@@ -10,7 +10,7 @@ const int CS = 10; // ChipSelect
 
 unsigned long startTime;
 unsigned long currTime;
-float measTime = 2; // in Minutes
+float measTime = 20; // in Minutes
 
 const char UBLOX_INIT[] PROGMEM = {
 
@@ -39,6 +39,8 @@ const char UBLOX_INIT[] PROGMEM = {
 
 };
 
+const int bufLen = 1300;
+
 void setup() {
   Serial.begin(9600);
   Serial1.begin(9600);
@@ -60,7 +62,7 @@ void setup() {
     delay(10); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
   }
   delay(15000);
-  binaryFile = SD.open("Rov.bin", FILE_WRITE);
+  binaryFile = SD.open("Bas.bin", FILE_WRITE);
   delay(1000);
   /*
     // Clear the serial buffer and switch the baud rate
@@ -75,17 +77,15 @@ void setup() {
 }
 
 void loop() {
-  char buf[600];
-  int buf_length = 0;
+  char buf[bufLen];
+  int bufIndex = 0;
   while (Serial1.available()) {
-    int ci = Serial1.read();
-    char c = ci;
-    buf[buf_length] = c;
-    buf_length += 1;
+    buf[bufIndex] = (char) Serial1.read();
+    bufIndex += 1;
   }
 
-  if (buf_length != 0) {
-    binaryFile.write(buf , buf_length);
+  if (bufIndex != 0) {
+    binaryFile.write(buf , bufIndex);
     binaryFile.flush();
   }
 
