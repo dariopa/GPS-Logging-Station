@@ -77,6 +77,13 @@ void setup() {
   digitalWrite(donePin, LOW);
   delay(5);
 
+  // Initialize SD Card
+  pinMode(CS, OUTPUT);
+  if (!SD.begin(CS)) {
+    return;
+  }
+  delay(500);
+
   // Battery Management System
   if ( bms() ) {
     for (int i = 0; i < 50; i++) {
@@ -95,13 +102,6 @@ void setup() {
   }
   delay(500);
 
-  // Initialize SD Card
-  pinMode(CS, OUTPUT);
-  if (!SD.begin(CS)) {
-    return;
-  }
-  delay(500);
-
   // Open GPS File
   gpsFile = SD.open("ROV.bin", FILE_WRITE);
   delay(500);
@@ -113,9 +113,7 @@ void loop() {
   char buf[bufLen];
   int bufIndex = 0;
   while (Serial1.available()) {
-    int ci = Serial1.read();
-    char c = ci;
-    buf[bufIndex] = c;
+    buf[bufIndex] = (char) Serial1.read();
     bufIndex += 1;
   }
 
@@ -143,6 +141,7 @@ bool bms() {
   sensors.requestTemperatures(); // Send the command to get temperatures
   temp = sensors.getTempCByIndex(0); // Read the temperature
   delay(5);
+
 
   // VOLTAGE
   analogValue = analogRead(A0);
