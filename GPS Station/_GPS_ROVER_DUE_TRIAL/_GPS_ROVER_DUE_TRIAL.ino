@@ -97,7 +97,6 @@ unsigned long currTime;
 unsigned long weekTime;
 float measTime = 2; // in Minutes!
 
-
 // ###################################################################################################
 
 void setup() {
@@ -133,7 +132,7 @@ void setup() {
       Serial2.println(posllh.height / 1000., 6);
       counter += 1;
     }
-    if (counter == 20) {
+    if (counter == 10) {
       weekTime = posllh.iTOW;
       break;
     }
@@ -165,7 +164,8 @@ void loop() {
   char buf[bufLen];
   int bufIndex = 0;
   while (Serial1.available()) {
-    buf[bufIndex] = (char) Serial1.read();
+    buf[bufIndex] = (char) Serial1.read(); // Store byte into buffer
+    Serial2.write(buf[bufIndex]); // Send byte via xbee to homebase
     bufIndex += 1;
   }
 
