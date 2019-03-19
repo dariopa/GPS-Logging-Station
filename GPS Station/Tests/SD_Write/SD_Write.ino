@@ -1,8 +1,12 @@
 #include <SD.h>
 
 File myFile;
-
+File root;
 const int ChipSelect = 10;
+unsigned long weekTime = 13250329;
+unsigned long startTime;
+unsigned long currTime;
+float measTime = 0.5; // in Minutes!
 
 void setup()
 {
@@ -19,16 +23,17 @@ void setup()
     return;
   }
   Serial.println("initialization done.");
-  myFile = SD.open("test.txt", FILE_WRITE);
+  // myFile = SD.open("test" + String(weekTime)+ ".txt", FILE_WRITE);
 
+  root = SD.open("/");
+  countFiles(root);
+  delay(5);
+
+  startTime = millis();
 }
 
 void loop()
 {
-  // open the file. note that only one file can be open at a time,
-  // so you have to close this one before opening another.
-  
-
   if (myFile) {
     Serial.print("Writing to test.txt...");
     myFile.println("testing 1, 2, 3.");
@@ -39,8 +44,28 @@ void loop()
 
   } else {
     // if the file didn't open, print an error:
-    Serial.println("error opening test.txt");
+    Serial.println("error opening .txt-File");
   }
   delay(1000);
+  currTime = millis();
+  if (currTime - startTime >= measTime * 60 * 1000) {
+    myFile.close();
+    while (1) {}
+  }
+}
 
+void countFiles(File dir) {
+  int fileCount = 0;
+  while (true) {
+    File entry =  dir.openNextFile();
+    if (! entry) {
+      // no more files
+      myFile = SD.open("ROV_" + String(fileCount) + ".txt", FILE_WRITE);
+      break;
+    }
+    
+    else {
+      fileCount += 1;
+    }
+  }
 }
