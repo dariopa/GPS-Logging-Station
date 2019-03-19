@@ -96,7 +96,7 @@ float voltage; // Real voltage
 // SD CARD
 File bmsFile; // Declare file where BMS data will be written onto.
 File gpsFile; // Declare file where GPS data will be written onto.
-File root; 
+File root;
 const int CS = 10; // Chip Select Pin for communication with SD card.
 
 // TPL5110
@@ -207,7 +207,7 @@ void openFile(File dir) {
     File entry =  dir.openNextFile();
     if (! entry) {
       // no more files
-      gpsFile = SD.open("ROV" + String(fileCount) + ".bin", FILE_WRITE);
+      gpsFile = SD.open("ROV" + String(fileCount - 1) + ".bin", FILE_WRITE); // -1 as bms file will also be counted. 
       break;
     }
     else {
