@@ -202,12 +202,12 @@ void sdInit() {
 }
 
 void openFile(File dir) {
-  int fileCount = 0;
+  int fileCount = -1; // -1 as bms file will also be counted.
   while (true) {
     File entry =  dir.openNextFile();
     if (! entry) {
       // no more files
-      gpsFile = SD.open("ROV" + String(fileCount - 1) + ".bin", FILE_WRITE); // -1 as bms file will also be counted. 
+      gpsFile = SD.open("ROV" + String(fileCount) + ".bin", FILE_WRITE);
       break;
     }
     else {
