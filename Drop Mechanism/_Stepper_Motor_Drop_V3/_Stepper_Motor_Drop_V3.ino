@@ -1,32 +1,63 @@
-#include <AX12A.h>
+// ========================================
+// Dynamixel XL-320 Arduino library example
+// ========================================
+
+// Read more:
+// https://github.com/hackerspace-adelaide/XL320
+
+#include "XL320.h"
+
+// Name your robot!
+XL320 robot;
+
+// If you want to use Software Serial, uncomment this line
 #include <SoftwareSerial.h>
 
-#define DirectionPin (10u)
-#define BaudRate (ul) // Default
-#define ID (1u)
+// Set the SoftwareSerial RX & TX pins
+SoftwareSerial mySerial(8, 9); // (RX, TX)
 
-const int rxPin = 8;
-const int txPin = 9;
-SoftwareSerial serial = SoftwareSerial(rxPin, txPin);
+// Set some variables for incrementing position & LED colour
+char rgb[] = "rgbypcwo";
+int servoPosition = 0;
+int ledColour = 0;
 
-
-int reg = 0;
+// Set the default servoID to talk to
+int servoID = 1;
 
 void setup() {
-  // put your setup code here, to run once:
-  Serial.begin(9600);
-  serial.begin(9600);
-  
-  delay(1000);
-  ax12a.begin(BaudRate, DirectionPin, &serial);
-  ax12a.move(1,100);
-  delay(1000);
+  mySerial.begin(1000000);
+  robot.begin(mySerial);
+  delay(100);
+
+  // writePacket(1, XL_BAUD_RATE, x) sets the baud rate:
+  // 0: 9600, 1:57600, 2:115200, 3:1Mbps
+  robot.sendPacket(servoID, XL_BAUD_RATE, 2);
+  delay(100);
+
+  // Setup Software Serial
+  mySerial.begin(115200);
+
+  // Initialise your robot
+  robot.begin(mySerial); // Hand in the serial object you're using
+
+  // I like fast moving servos, so set the joint speed to max!
+  robot.setJointSpeed(servoID, 1023);
 
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  reg = ax12a.readPosition(ID);
-  Serial.println(reg);
-  delay(1000);
+
+  // Set a delay to account for the receive delay period
+  delay(100);
+
+
+  // Servo test.. select a random servoID and colour
+  robot.moveJoint(servoID, random(0, 1023));
+
+  // Servo test.. increment the servo position by 100 each loop
+  //  robot.moveJoint(servoID, servoPosition);
+  servoPosition = (servoPosition + 100) % 1023;
+
+  // Set a delay to account for the receive delay period
+  delay(100);
 }
