@@ -104,7 +104,7 @@ const int donePin = 4; // Signal to timer TPL5110
 unsigned long startTime;
 unsigned long currTime;
 unsigned long weekTime;
-float measTime = 5; // in Minutes!
+float measTime = 3; // in Minutes!
 
 // ###################################################################################################
 
@@ -219,14 +219,14 @@ void openFile(File dir) {
 void gpsInit() {
   for (int i = 0; i < sizeof(UBLOX_INIT_POSLLH); i++) {
     Serial1.write( pgm_read_byte(UBLOX_INIT_POSLLH + i) );
-    delay(5); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
+    delay(10); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
   }
 }
 
 void gpsConfig() {
   for (int i = 0; i < sizeof(UBLOX_INIT_RAWX); i++) {
     Serial1.write( pgm_read_byte(UBLOX_INIT_RAWX + i) );
-    delay(5); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
+    delay(10); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
   }
 }
 
