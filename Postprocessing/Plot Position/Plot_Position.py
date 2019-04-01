@@ -6,6 +6,7 @@ import mpl_toolkits
 from mpl_toolkits.mplot3d import Axes3D
 
 filename = 'POS.pos'
+measInterval = 1 # seconds!
 
 # PARSING DATA
 with open(filename, 'r') as filehandle:  
@@ -25,24 +26,43 @@ with open(filename, 'r') as filehandle:
             height.append(float(values[4]))
             quality.append(int(values[5]))
 
+fixCounter = 0
+
+for i in range(0,len(quality)):
+    if quality[i] == 1:
+        fixCounter += 1
+FixFloatRate = float(fixCounter)/float(len(quality))*100
+
+timeCounter = 0
+for i in range(0,len(quality)):
+    if quality[i] != 1:
+        timeCounter += 1
+    else:
+        print('Stopped at ' + str(i))
+        break
+timeToFirstFix = timeCounter * measInterval
+
+
 # GENERATE PLOTS
 color = []
 for i in range(0, len(date)):
     if quality[i] == 1:
-        color.append('green')
+        color.append('g')
     elif quality[i] == 2:
-        color.append('blue')
+        color.append('b')
     else:
-        color.append('red')
+        color.append('r')
 
+'''
 plt.figure(1)
+plt.plot(longitude, latitude, 'k')
 plt.scatter(longitude, latitude, c = color)
-
 plt.show()
 '''
+
 fig = plt.figure(1)
 ax = fig.add_subplot(111, projection='3d')
-ax.plot(longitude, latitude, height, label='Position in Space', color = color)
+ax.plot(xs=longitude, ys=latitude, zs=height, zdir='z', c='k', linewidth=0.5, label='Position in Space')
+ax.scatter(xs=longitude, ys=latitude, zs=height, zdir='z', c=color)
+plt.title('FIXED: %1.1f%%' % FixFloatRate + ' after ' + str(timeToFirstFix) + ' sec')
 plt.show()
-'''
-
