@@ -121,7 +121,7 @@ void setup() {
   Serial.begin(9600); // Start serial port
   serialGPS.begin(9600); // Start serial port with GPS receiver
   serialXbee.begin(9600); // Start serial port with XBEE module
-  delay(5);
+  delay(3000);
 
   // Initialise TPL5110
   pinMode(donePin, OUTPUT);
@@ -189,6 +189,7 @@ void loop() {
 
   if (bufIndex != 0) {
     gpsFile.write(buf , bufIndex);
+    gpsFile.write("bla");
     gpsFile.flush();
   }
 
