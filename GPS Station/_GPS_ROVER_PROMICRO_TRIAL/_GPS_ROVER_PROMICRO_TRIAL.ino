@@ -5,52 +5,15 @@
 #include <DallasTemperature.h>
 #include <SoftwareSerial.h>
 
+const byte rxPinGPS = 8;
+const byte txPinGPS = 9;
+
+SoftwareSerial serialGPS = SoftwareSerial(rxPinGPS, txPinGPS);
+
 // SD CARD
 #include <SD.h>
 
 // ###################################################################################################
-const char UBLOX_INIT_POSLLH[] PROGMEM = {
-  // Disable NMEA
-  0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x24, // GxGGA off
-  0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0xF0, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x2B, // GxGLL off
-  0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0xF0, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x32, // GxGSA off
-  0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0xF0, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03, 0x39, // GxGSV off
-  0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0xF0, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x04, 0x40, // GxRMC off
-  0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0xF0, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x05, 0x47, // GxVTG off
-
-  // Disable UBX
-  0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x02, 0x15, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x26, 0x46, // RXM-RAWX off
-  0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x02, 0x13, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x24, 0x38, // RXM-SFRBX off
-  0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x01, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x12, 0xB9, // NAV-POSLLH off
-
-  // Enable POSLLH
-  0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x01, 0x02, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x13, 0xBE, // NAV-POSLLH on
-
-  // Rate
-  // 0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xE8, 0x03, 0x01, 0x00, 0x01, 0x00, 0x01, 0x39, //(1Hz)
-  0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xD0, 0x07, 0x01, 0x00, 0x01, 0x00, 0xED, 0xBD, // (0.5Hz)
-  // 0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xB8, 0x0B, 0x01, 0x00, 0x01, 0x00, 0xD9, 0x41, // (0.33Hz)
-
-};
-
-const unsigned char UBX_HEADER[] = { 0xB5, 0x62 };
-
-struct NAV_POSLLH {
-  unsigned char cls;
-  unsigned char id;
-  unsigned short len;
-  unsigned long iTOW;
-  long lon;
-  long lat;
-  long height;
-  long hMSL;
-  unsigned long hAcc;
-  unsigned long vAcc;
-};
-
-NAV_POSLLH posllh;
-
-
 const char UBLOX_INIT_RAWX[] PROGMEM = {
   // Disable NMEA
   0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x24, // GxGGA off
@@ -63,15 +26,14 @@ const char UBLOX_INIT_RAWX[] PROGMEM = {
   // Disable UBX
   0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x02, 0x15, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x26, 0x46, // RXM-RAWX off
   0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x02, 0x13, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x24, 0x38, // RXM-SFRBX off
-  0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x01, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x12, 0xB9, // NAV-POSLLH off
 
   // Enable UBX
   0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x02, 0x15, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x27, 0x4B, // RXM-RAWX on
   0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x02, 0x13, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x25, 0x3D, // RXM-SFRBX on
 
   // Rate
-  0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xE8, 0x03, 0x01, 0x00, 0x01, 0x00, 0x01, 0x39, //(1Hz)
-  // 0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xD0, 0x07, 0x01, 0x00, 0x01, 0x00, 0xED, 0xBD, // (0.5Hz)
+  // 0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xE8, 0x03, 0x01, 0x00, 0x01, 0x00, 0x01, 0x39, //(1Hz)
+  0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xD0, 0x07, 0x01, 0x00, 0x01, 0x00, 0xED, 0xBD, // (0.5Hz)
   // 0xB5, 0x62, 0x06, 0x08, 0x06, 0x00, 0xB8, 0x0B, 0x01, 0x00, 0x01, 0x00, 0xD9, 0x41, // (0.33Hz)
 
 };
@@ -108,19 +70,13 @@ unsigned long weekTime;
 float measTime = 3; // in Minutes!
 
 // ###################################################################################################
-const byte rxPinGPS = 8;
-const byte txPinGPS = 9;
-const byte rxPinXbee = 0;
-const byte txPinXbee = 1;
-
-SoftwareSerial serialGPS = SoftwareSerial(rxPinGPS, txPinGPS);
-SoftwareSerial serialXbee = SoftwareSerial(rxPinXbee, txPinXbee);
 
 void setup() {
   // Initialize all serial ports:
   Serial.begin(9600); // Start serial port
+  pinMode(rxPinGPS, INPUT);
+  pinMode(txPinGPS, OUTPUT);
   serialGPS.begin(9600); // Start serial port with GPS receiver
-  serialXbee.begin(9600); // Start serial port with XBEE module
   delay(3000);
 
   // Initialise TPL5110
@@ -129,42 +85,6 @@ void setup() {
   delay(5);
 
   sdInit(); // Initialize SD Card
-  delay(500);
-
-  gpsInit(); // send configuration data to get NAV-POSLLH
-  delay(500);
-
-  // Send Heartbeats to homebase, i.e. send NAV-POSLLH to homebase via XBEE
-  int counter = 0;
-  while (1) {
-    if (processGPS() ) {
-      // Send just fixed position via Xbee
-      serialXbee.print("iTOW: ");
-      serialXbee.print(posllh.iTOW);
-      serialXbee.print(" , lat/lon :");
-      serialXbee.print(posllh.lat / 10000000., 9);
-      serialXbee.print(", ");
-      serialXbee.print(posllh.lon / 10000000., 9);
-      serialXbee.print(", height: ");
-      serialXbee.println(posllh.height / 1000., 6);
-      counter += 1;
-    }
-    if (counter == 10) {
-      weekTime = posllh.iTOW;
-      break;
-    }
-  }
-  delay(500);
-
-  // Battery Management System
-  if ( bms() ) {
-    for (int i = 0; i < 5; i++) {
-      serialXbee.println("LOW BATTERY VOLTAGE - PICK ME UP!");
-    }
-    serialXbee.flush();
-    delay(5);
-    digitalWrite(donePin, HIGH); // switch off whole system
-  }
   delay(500);
 
   gpsConfig(); // send configuration data in UBX protocol to receive RAWX and SFRBX
@@ -183,7 +103,7 @@ void loop() {
   int bufIndex = 0;
   while (serialGPS.available()) {
     buf[bufIndex] = (char) serialGPS.read(); // Store byte into buffer
-    serialXbee.write(buf[bufIndex]); // Send byte via xbee to homebase
+    Serial.write(buf[bufIndex]); // Send byte via xbee to homebase
     bufIndex += 1;
   }
 
@@ -225,13 +145,6 @@ void openFile(File dir) {
   }
 }
 
-void gpsInit() {
-  for (int i = 0; i < sizeof(UBLOX_INIT_POSLLH); i++) {
-    serialGPS.write( pgm_read_byte(UBLOX_INIT_POSLLH + i) );
-    delay(10); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
-  }
-}
-
 void gpsConfig() {
   for (int i = 0; i < sizeof(UBLOX_INIT_RAWX); i++) {
     serialGPS.write( pgm_read_byte(UBLOX_INIT_RAWX + i) );
@@ -270,52 +183,4 @@ bool bms() {
   else {
     return false;
   }
-}
-
-void calcChecksum(unsigned char* CK) {
-  memset(CK, 0, 2);
-  for (int i = 0; i < (int)sizeof(NAV_POSLLH); i++) {
-    CK[0] += ((unsigned char*)(&posllh))[i];
-    CK[1] += CK[0];
-  }
-}
-
-bool processGPS() {
-  static int fpos = 0;
-  static unsigned char checksum[2];
-  const int payloadSize = sizeof(NAV_POSLLH);
-
-  while ( serialGPS.available() ) {
-    byte c = serialGPS.read();
-    if ( fpos < 2 ) {
-      if ( c == UBX_HEADER[fpos] )
-        fpos++;
-      else
-        fpos = 0;
-    }
-    else {
-      if ( (fpos - 2) < payloadSize )
-        ((unsigned char*)(&posllh))[fpos - 2] = c;
-
-      fpos++;
-
-      if ( fpos == (payloadSize + 2) ) {
-        calcChecksum(checksum);
-      }
-      else if ( fpos == (payloadSize + 3) ) {
-        if ( c != checksum[0] )
-          fpos = 0;
-      }
-      else if ( fpos == (payloadSize + 4) ) {
-        fpos = 0;
-        if ( c == checksum[1] ) {
-          return true;
-        }
-      }
-      else if ( fpos > (payloadSize + 4) ) {
-        fpos = 0;
-      }
-    }
-  }
-  return false;
 }
