@@ -1,17 +1,11 @@
 // Include all relevant libraries.
-
-// TEMPERATURE SENSOR
-#include <OneWire.h>
-#include <DallasTemperature.h>
+#include <SD.h>
 #include <SoftwareSerial.h>
 
 const byte rxPinGPS = 8;
 const byte txPinGPS = 9;
 
 SoftwareSerial serialGPS = SoftwareSerial(rxPinGPS, txPinGPS);
-
-// SD CARD
-#include <SD.h>
 
 // ###################################################################################################
 const char UBLOX_INIT_RAWX[] PROGMEM = {
@@ -39,25 +33,9 @@ const char UBLOX_INIT_RAWX[] PROGMEM = {
 };
 
 // GPS RECEIVER
-const int bufLen = 1300;
-
-// TEMPERATURE SENSOR
-#define ONE_WIRE_BUS 5 // Pin 5 on Board. 
-float temp; // Variable to store temperature value.
-OneWire oneWire(ONE_WIRE_BUS); // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
-DallasTemperature sensors(&oneWire); // Pass oneWire reference to Dallas Temperature.
-
-// VOLTAGE MEASUREMENT
-int analogValue; // Analog value that Arduino reads
-const float maxVoltageBattery = 4.2; // Maximum voltage on battery when charged
-const float maxVoltageArduino = 3; // Maximum voltage Arduino should read
-const float lowVolt = -3.35; // change sign from - to + in the final version!
-const float vpp = maxVoltageBattery / 1023; // Volts per point <-> accuracy of measurement
-const float voltageRatio = maxVoltageBattery / maxVoltageArduino; // Ratio to mathematically upscale voltage
-float voltage; // Real voltage
+const int bufLen = 800;
 
 // SD CARD
-File bmsFile; // Declare file where BMS data will be written onto.
 File gpsFile; // Declare file where GPS data will be written onto.
 File root;
 const int CS = 10; // Chip Select Pin for communication with SD card.
@@ -67,17 +45,18 @@ const int donePin = 4; // Signal to timer TPL5110
 unsigned long startTime;
 unsigned long currTime;
 unsigned long weekTime;
-float measTime = 3; // in Minutes!
+float measTime = 2; // in Minutes!
 
 // ###################################################################################################
 
 void setup() {
+  delay(1000);
   // Initialize all serial ports:
   Serial.begin(9600); // Start serial port
   pinMode(rxPinGPS, INPUT);
   pinMode(txPinGPS, OUTPUT);
   serialGPS.begin(9600); // Start serial port with GPS receiver
-  delay(3000);
+  delay(500);
 
   // Initialise TPL5110
   pinMode(donePin, OUTPUT);
@@ -148,38 +127,5 @@ void gpsConfig() {
   for (int i = 0; i < sizeof(UBLOX_INIT_RAWX); i++) {
     serialGPS.write( pgm_read_byte(UBLOX_INIT_RAWX + i) );
     delay(10); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
-  }
-}
-
-bool bms() {
-  bmsFile = SD.open("bms.txt", FILE_WRITE);
-
-  // TEMPERATURE SENSOR
-  sensors.begin(); // Start up the library. IC Default 9 bit. If you have troubles consider upping it up to 12. Ups the the delay giving the IC more time to process the temperature measurement
-  sensors.requestTemperatures(); // Send the command to get temperatures
-  temp = sensors.getTempCByIndex(0); // Read the temperature
-  delay(5);
-
-  // VOLTAGE
-  analogValue = analogRead(A0);
-  voltage = (analogValue * vpp) * voltageRatio;
-  delay(5);
-
-  // STORE DATA
-  bmsFile.print("iTOW: ");
-  bmsFile.print(weekTime);
-  bmsFile.print(", Temperature: ");
-  bmsFile.print(temp);
-  bmsFile.print("°C, Voltage: ");
-  bmsFile.print(voltage);
-  bmsFile.println("V");
-  bmsFile.close();
-  delay(5);
-
-  if (voltage < lowVolt) {
-    return true;
-  }
-  else {
-    return false;
   }
 }
