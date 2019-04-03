@@ -109,7 +109,6 @@ void loop() {
 
   if (bufIndex != 0) {
     gpsFile.write(buf , bufIndex);
-    gpsFile.write("bla");
     gpsFile.flush();
   }
 

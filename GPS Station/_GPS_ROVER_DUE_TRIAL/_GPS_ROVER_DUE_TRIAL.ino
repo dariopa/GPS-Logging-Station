@@ -151,7 +151,7 @@ void setup() {
   // Battery Management System
   if ( bms() ) {
     for (int i = 0; i < 5; i++) {
-      Serial2.println("LOW BATTERY VOLTAGE - PICK ME UP!");
+      Serial2.println("LOW BATTERY VOLTAGE - PICK ME UP");
     }
     Serial2.flush();
     delay(5);
@@ -197,8 +197,10 @@ void loop() {
 void sdInit() {
   pinMode(CS, OUTPUT);
   if (!SD.begin(CS)) {
+    Serial.println("initialisation failed");
     return;
   }
+  Serial.println("initialisation succeeded");
 }
 
 void openFile(File dir) {
