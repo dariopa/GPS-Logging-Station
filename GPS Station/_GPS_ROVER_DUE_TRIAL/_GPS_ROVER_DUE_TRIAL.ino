@@ -7,6 +7,9 @@
 // SD CARD
 #include <SD.h>
 
+// Declare measurment time
+float measTime = 3; // in Minutes!
+
 // ###################################################################################################
 const char UBLOX_INIT_POSLLH[] PROGMEM = {
   // Disable NMEA
@@ -104,8 +107,6 @@ const int donePin = 4; // Signal to timer TPL5110
 unsigned long startTime;
 unsigned long currTime;
 unsigned long weekTime;
-float measTime = 3; // in Minutes!
-
 // ###################################################################################################
 
 void setup() {
@@ -171,24 +172,24 @@ void setup() {
 }
 
 void loop() {
-  char buf[bufLen];
-  int bufIndex = 0;
-  while (Serial1.available()) {
+  char buf[bufLen]; // declare a buffer
+  int bufIndex = 0; // declare buffer index
+  while (Serial1.available()) { // while GPS receiver transmitts bytes, write them into buffer
     buf[bufIndex] = (char) Serial1.read(); // Store byte into buffer
     Serial2.write(buf[bufIndex]); // Send byte via xbee to homebase
     bufIndex += 1;
   }
 
   if (bufIndex != 0) {
-    gpsFile.write(buf , bufIndex);
+    gpsFile.write(buf , bufIndex); // when GPS receiver is done transmitting data, store it on microSD
     gpsFile.flush();
   }
 
-  currTime = millis();
-  if (currTime - startTime > measTime * 60 * 1000) {
+  currTime = millis(); // measure current time
+  if (currTime - startTime > measTime * 60 * 1000) { // if measTime has been exceeded, toggle TPL5110
     gpsFile.close();
     delay(20);
-    digitalWrite(donePin, HIGH);
+    digitalWrite(donePin, HIGH); // toggle TPL5110
   }
 }
 
