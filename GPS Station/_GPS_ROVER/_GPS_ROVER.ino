@@ -8,7 +8,7 @@
 #include <SD.h>
 
 // Declare measurment time
-float measTime = 3; // in Minutes!
+float measTime = 2; // in Minutes!
 
 // ###################################################################################################
 const char UBLOX_INIT_POSLLH[] PROGMEM = {
@@ -115,6 +115,8 @@ void setup() {
   Serial1.begin(9600); // Start serial port with GPS receiver
   Serial2.begin(9600); // Start serial port with XBEE module
   delay(5);
+  pinMode(LED_BUILTIN, OUTPUT);
+
 
   // Initialise TPL5110
   pinMode(donePin, OUTPUT);
@@ -198,6 +200,7 @@ void loop() {
 void sdInit() {
   pinMode(CS, OUTPUT);
   if (!SD.begin(CS)) {
+    digitalWrite(LED_BUILTIN, HIGH);
     Serial.println("initialisation failed");
     return;
   }
