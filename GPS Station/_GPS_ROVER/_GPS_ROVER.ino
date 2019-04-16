@@ -79,7 +79,7 @@ const char UBLOX_INIT_RAWX[] PROGMEM = {
 };
 
 // GPS RECEIVER
-const int bufLen = 1300;
+const int bufLen = 2000;
 
 // TEMPERATURE SENSOR
 #define ONE_WIRE_BUS 5 // Pin 5 on Board. 
@@ -125,7 +125,7 @@ void setup() {
 
   sdInit(); // Initialize SD Card
   delay(500);
-
+  
   gpsInit(); // send configuration data to get NAV-POSLLH
   delay(500);
 
@@ -200,7 +200,6 @@ void loop() {
 void sdInit() {
   pinMode(CS, OUTPUT);
   if (!SD.begin(CS)) {
-    digitalWrite(LED_BUILTIN, HIGH);
     Serial.println("initialisation failed");
     return;
   }
