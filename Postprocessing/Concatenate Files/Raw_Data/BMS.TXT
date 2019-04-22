@@ -1,9 +1,0 @@
-iTOW: 469664000, Temperature: 16.25°C, Voltage: 2.39V
-iTOW: 469918000, Temperature: 17.62°C, Voltage: 2.37V
-iTOW: 470084000, Temperature: 17.69°C, Voltage: 2.37V
-iTOW: 470242000, Temperature: 16.94°C, Voltage: 2.36V
-iTOW: 470438000, Temperature: 18.12°C, Voltage: 2.36V
-iTOW: 470656000, Temperature: 18.87°C, Voltage: 2.35V
-iTOW: 470956000, Temperature: 18.94°C, Voltage: 2.34V
-iTOW: 471268000, Temperature: 19.75°C, Voltage: 2.33V
-iTOW: 471776000, Temperature: 20.37°C, Voltage: 2.31V
