@@ -9,4 +9,4 @@ nrFiles = len(fnmatch.filter(os.listdir(callFolder), '*.BIN'))
 
 for i in range(0, nrFiles):
     for f in glob.glob(os.path.join(callFolder, 'ROV' + str(i+1) + '.BIN')):
-        os.system('cat '+f+' >> Concat_Data.bin')
+        os.system('cat '+f+' >> Rover.bin')
