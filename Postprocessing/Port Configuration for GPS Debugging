@@ -1,0 +1,9 @@
+This snipped code shall be written into the terminal when reading the GPS signal with a FTDI key. 
+
+# 1) Configure port: 
+
+stty -F /dev/ttyUSB0 9600 raw -echo -echoe -echok -echoctl -echoke
+
+# 2) Write file (change filename first as well!):
+
+cat /dev/ttyUSB0 > FTDI.ubx
