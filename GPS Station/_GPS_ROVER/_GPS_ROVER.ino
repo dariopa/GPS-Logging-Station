@@ -131,7 +131,7 @@ void setup() {
 
   // Send Heartbeats to homebase, i.e. send NAV-POSLLH to homebase via XBEE
   int counter = 0;
-  while (1) {
+  while (true) {
     if (processGPS() ) {
       // Send just fixed position via Xbee
       Serial2.print("iTOW: ");
@@ -147,6 +147,13 @@ void setup() {
     if (counter == 10) {
       weekTime = posllh.iTOW;
       break;
+    }
+    // If for any reason processGPS gets stuck here, it will switch off after measTime
+    currTime = millis(); // Track time
+    if (currTime - startTime > measTime * 60 * 1000) { // if measTime is exceeded, toggle TPL5110
+      Serial2.println("stuck in processPGS");
+      delay(20);
+      digitalWrite(donePin, HIGH); // toggle TPL5110
     }
   }
   delay(500);
@@ -180,6 +187,10 @@ void loop() {
     buf[bufIndex] = (char) Serial1.read(); // Store byte into buffer
     Serial2.write(buf[bufIndex]); // Send byte via xbee to homebase
     bufIndex += 1;
+    if (bufIndex > bufLen) { // if more data available on Serial1 than bufLen, delete message
+      bufIndex = 0;
+      break;
+    }
   }
 
   if (bufIndex != 0) {
