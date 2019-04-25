@@ -1,9 +1,13 @@
 // Include all relevant libraries.
 #include "DropRecovery.h"
 
+SettingGPS gps;
 SettingSD sd;
 SettingBMS bms;
 SettingTPL tpl;
+
+// Declare measurment time
+float measurment_time = 2; // in Minutes!
 
 const char UBLOX_INIT[] PROGMEM = {
   // Disable NMEA
@@ -34,11 +38,6 @@ const char UBLOX_INIT_RAWX[] PROGMEM = {
   0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x02, 0x13, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x25, 0x3D, // RXM-SFRBX on
 };
 
-int buffer_length = 2000;
-
-// Declare measurment time
-float measurment_time = 2; // in Minutes!
-
 void setup() {
   // Initialize all serial ports:
   Serial.begin(9600);
@@ -49,7 +48,7 @@ void setup() {
   tpl.TPLInit(); // Initialize TPL5110
   sd.SdInit(); // Initialize SD Card
   GpsInit(); // send configuration for GPS initialisation
-  delay(2000); // wait 8 seconds until position lock on GPS receiver
+  delay(8000); // wait 8 seconds until position lock on GPS receiver
   RawxConfig(); // send configuration data in UBX protocol to receive RAWX and SFRBX
 
   // Open GPS File
@@ -61,23 +60,7 @@ void setup() {
 }
 
 void loop() {
-  char rawx_buffer[buffer_length]; // declare a buffer
-  int buffer_index = 0; // declare buffer index
-  while (Serial1.available()) { // while GPS receiver transmits bytes, write them into buffer
-    rawx_buffer[buffer_index] = (char) Serial1.read(); // Store byte into buffer
-    Serial2.write(rawx_buffer[buffer_index]); // Send byte via xbee to homebase
-    buffer_index++;
-    if (buffer_index > buffer_length) { // if more data available on Serial1 than buffer_length, delete message
-      buffer_index = 0;
-      break;
-    }
-  }
-
-  if (buffer_index != 0) {
-    sd.gpsFile.write(rawx_buffer , buffer_index); // when GPS receiver is done transmitting data, store it on microSD
-    sd.gpsFile.flush();
-  }
-
+  ReadWriteRAWX();
   tpl.current_time = millis(); // measure current time
   tpl.TPLToggle(tpl.current_time, tpl.start_time, measurment_time);
 }
@@ -99,7 +82,24 @@ void RawxConfig() {
   delay(20);
 }
 
+void ReadWriteRAWX() {
+  char rawx_buffer[gps.buffer_length]; // declare a buffer
+  int buffer_index = 0; // declare buffer index
+  while (Serial1.available()) { // while GPS receiver transmits bytes, write them into buffer
+    rawx_buffer[buffer_index] = (char) Serial1.read(); // Store byte into buffer
+    Serial2.write(rawx_buffer[buffer_index]); // Send byte via xbee to homebase
+    buffer_index++;
+    if (buffer_index > gps.buffer_length) { // if more data available on Serial1 than gps.buffer_length, delete message
+      buffer_index = 0;
+      break;
+    }
+  }
 
+  if (buffer_index != 0) {
+    sd.gpsFile.write(rawx_buffer , buffer_index); // when GPS receiver is done transmitting data, store it on microSD
+    sd.gpsFile.flush();
+  }
+}
 
 void test() {
   digitalWrite(LED_BUILTIN, HIGH);

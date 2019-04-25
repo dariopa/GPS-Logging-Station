@@ -4,11 +4,6 @@
 
 SettingBMS::SettingBMS() {
   // Anything required when instantiating an object, goes here.
-  const float _MaxVoltageBattery = 4.2; // Maximum voltage on battery when charged
-  const float _MaxVoltageArduino = 3.3; // Maximum voltage Arduino should read
-  const float _LowVoltage = 3.3; // Lowest Voltage where TPL5110 has to be toggled
-  const float _Vpp = _MaxVoltageBattery / 1023; // Volts per point <-> accuracy of measurement
-  const float _VoltageRatio = _MaxVoltageBattery / _MaxVoltageArduino; // Ratio to mathematically upscale voltage
 }
 
 float SettingBMS::Bms() {
@@ -23,8 +18,9 @@ float SettingBMS::Bms() {
 
   // Voltage
   analog_value = analogRead(A0);
-  real_voltage = (analog_value * _Vpp) * _VoltageRatio;
+  real_voltage = (analog_value * Vpp) * VoltageRatio;
   delay(5);
 
-  return temperature, real_voltage;
+  return temperature, real_voltage; // doesn't work like that, have to implement pointer
+  
 }

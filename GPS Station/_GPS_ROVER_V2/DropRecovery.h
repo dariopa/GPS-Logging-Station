@@ -9,6 +9,13 @@
 
 #include <SD.h>
 
+
+class SettingGPS {
+  public:
+  //Variables
+  int buffer_length = 2000;
+};
+
 class SettingSD {
   public:
     // Constructor
@@ -39,13 +46,11 @@ class SettingBMS {
     float temperature; // Variable to store temperature value
     int analog_value; // Analog voltage value that Arduino reads
     float real_voltage; // Real measured voltage
-
-  private:
-    const float _MaxVoltageBattery; // Maximum voltage on battery when charged
-    const float _MaxVoltageArduino; // Maximum voltage Arduino should read
-    const float _LowVoltage; // Lowest acceptable voltage
-    const float _Vpp; // Volts per point <-> accuracy of measurement
-    const float _VoltageRatio; // Ratio to mathematically upscale voltage
+    const float MaxVoltageBattery = 4.2; // Maximum voltage on battery when charged
+    const float MaxVoltageArduino = 3.3; // Maximum voltage Arduino should read
+    const float LowVoltage = 3.3; // Lowest acceptable voltage
+    const float Vpp=MaxVoltageBattery / 1023; // Volts per point <-> accuracy of measurement
+    const float VoltageRatio = MaxVoltageBattery / MaxVoltageArduino; // Ratio to mathematically upscale voltage
 
 };
 
