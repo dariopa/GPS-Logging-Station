@@ -15,7 +15,6 @@ float SettingBMS::Temperature() {
   delay(5);
 
   return temperature;
-
 }
 
 float SettingBMS::Voltage() {

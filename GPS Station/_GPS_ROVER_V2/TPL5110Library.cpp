@@ -11,12 +11,13 @@ void SettingTPL::TPLInit() {
   delay(20);
 }
 
-void SettingTPL::TPLToggle(unsigned long current_time, unsigned long start_time, unsigned long measurment_time) {
-  if (current_time - start_time > measurment_time * 60 * 1000) { // if measurment_time is exceeded, toggle TPL5110
-    Serial2.println("stuck in processGPS");
-    delay(20);
-    digitalWrite(4, HIGH); // toggle TPL5110
-  }
+bool SettingTPL::TPLMeasureTime(unsigned long current_time, unsigned long start_time, unsigned long measurment_time) {
+  if (current_time - start_time > measurment_time * 60 * 1000) // if measurment_time is exceeded, toggle TPL5110
+    return true;
   else
-    delay(20);
+    return false;
+}
+
+void SettingTPL::TPLToggle() {
+  digitalWrite(4, HIGH); // toggle TPL5110
 }

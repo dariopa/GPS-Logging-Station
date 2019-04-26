@@ -1,4 +1,3 @@
-// Include all relevant libraries.
 #include "DropRecovery.h"
 
 SettingGPS gps;
@@ -6,8 +5,8 @@ SettingSD sd;
 SettingBMS bms;
 SettingTPL tpl;
 
-// Declare measurment time
-float measurment_time = 2; // in Minutes!
+float measurment_time = 2; // Declare measurment time in minutes
+bool bms_switch = false; // If bms is connected, then true. If not connected, then false.
 
 const char UBLOX_INIT[] PROGMEM = {
   // Disable NMEA
@@ -42,19 +41,32 @@ void setup() {
   // Initialize all serial ports:
   Serial1.begin(9600); // Start serial port with GPS receiver
   Serial2.begin(9600); // Start serial port with XBEE module
-  pinMode(LED_BUILTIN, OUTPUT);
 
   tpl.TPLInit(); // Initialize TPL5110
   sd.SdInit(); // Initialize SD Card
   GpsInit(); // send configuration for GPS initialisation
-  delay(8000); // wait 8 seconds until position lock on GPS receiver
   RawxConfig(); // send configuration data in UBX protocol to receive RAWX and SFRBX
 
   //###### BMS #######
   float temp = bms.Temperature();
   float volt = bms.Voltage();
-  if (temp < 0.0 or volt < bms.LowVoltage) {
-    Serial2.print("Batterly or temperature low!");
+  sd.bmsFile = SD.open("BMS.txt", FILE_WRITE);
+  sd.bmsFile.print(" Temperature ");  sd.bmsFile.print(temp);
+  sd.bmsFile.print("°C, Voltage "); sd.bmsFile.print(volt); sd.bmsFile.println("V");
+  sd.bmsFile.close();
+  if (bms_switch) {
+    if (temp < 0.0 or volt < bms.LowVoltage) {
+      Serial2.print("Battery or temperature low!");
+      delay(20);
+      tpl.TPLToggle();
+    }
+  }
+  else {
+    if (temp < 0.0) {
+      Serial2.print("Temperature below 0 degree");
+      delay(20);
+      tpl.TPLToggle();
+    }
   }
   //###### BMS #######
 
@@ -69,7 +81,9 @@ void setup() {
 void loop() {
   ReadWriteRAWX();
   tpl.current_time = millis(); // measure current time
-  tpl.TPLToggle(tpl.current_time, tpl.start_time, measurment_time);
+  if (tpl.TPLMeasureTime(tpl.current_time, tpl.start_time, measurment_time)) {
+    tpl.TPLToggle();
+  }
 }
 
 
@@ -78,7 +92,7 @@ void GpsInit() {
     Serial1.write( pgm_read_byte(UBLOX_INIT + i) );
     delay(10); // simulating a 38400baud pace (or less), otherwise commands are not accepted by the device.
   }
-  delay(20);
+  delay(8000); // wait 8 seconds until position lock on GPS receiver
 }
 
 void RawxConfig() {
@@ -106,10 +120,4 @@ void ReadWriteRAWX() {
     sd.gpsFile.write(rawx_buffer , buffer_index); // when GPS receiver is done transmitting data, store it on microSD
     sd.gpsFile.flush();
   }
-}
-
-void test() {
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(5000);
-  digitalWrite(LED_BUILTIN, LOW);
 }

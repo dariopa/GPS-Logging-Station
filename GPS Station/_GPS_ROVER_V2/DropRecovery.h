@@ -62,7 +62,8 @@ class SettingTPL {
 
     // Method
     void TPLInit();
-    void TPLToggle(unsigned long current_time, unsigned long start_time, unsigned long measurment_time);
+    bool TPLMeasureTime(unsigned long current_time, unsigned long start_time, unsigned long measurment_time);
+    void TPLToggle();
 
     // Variable
     unsigned long start_time;
