@@ -40,7 +40,8 @@ class SettingBMS {
     SettingBMS();
 
     // Methods
-    float Bms();
+    float Temperature();
+    float Voltage();
 
     // Variables
     float temperature; // Variable to store temperature value

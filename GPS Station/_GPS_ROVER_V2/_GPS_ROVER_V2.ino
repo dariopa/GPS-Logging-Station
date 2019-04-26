@@ -40,7 +40,6 @@ const char UBLOX_INIT_RAWX[] PROGMEM = {
 
 void setup() {
   // Initialize all serial ports:
-  Serial.begin(9600);
   Serial1.begin(9600); // Start serial port with GPS receiver
   Serial2.begin(9600); // Start serial port with XBEE module
   pinMode(LED_BUILTIN, OUTPUT);
@@ -50,6 +49,14 @@ void setup() {
   GpsInit(); // send configuration for GPS initialisation
   delay(8000); // wait 8 seconds until position lock on GPS receiver
   RawxConfig(); // send configuration data in UBX protocol to receive RAWX and SFRBX
+
+  //###### BMS #######
+  float temp = bms.Temperature();
+  float volt = bms.Voltage();
+  if (temp < 0.0 or volt < bms.LowVoltage) {
+    Serial2.print("Batterly or temperature low!");
+  }
+  //###### BMS #######
 
   // Open GPS File
   sd.root = SD.open("/");
