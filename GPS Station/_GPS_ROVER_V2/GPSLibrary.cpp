@@ -2,6 +2,7 @@
 
 SettingGPS::SettingGPS() {
   // Anything required when instantiating an object, goes here.
+  buffer_length = 2000;
 }
 
 void SettingGPS::GpsInit() {

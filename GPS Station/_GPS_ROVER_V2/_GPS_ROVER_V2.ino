@@ -12,6 +12,7 @@ void setup() {
   // Initialize all serial ports:
   Serial1.begin(9600); // Start serial port with GPS receiver
   Serial2.begin(9600); // Start serial port with XBEE module
+  pinMode(LED_BUILTIN, OUTPUT); // Just for test reasons, will be deleted in final version
 
   tpl.TPLInit(); // Initialize TPL5110
   sd.SdInit(); // Initialize SD Card
@@ -39,7 +40,6 @@ void setup() {
       tpl.TPLToggle();
     }
   }
-  //###### BMS #######
 
   // Open GPS File
   sd.root = SD.open("/");
@@ -70,4 +70,11 @@ void loop() {
   if (tpl.TPLMeasureTime(tpl.current_time, tpl.start_time, measurment_time)) {
     tpl.TPLToggle();
   }
+}
+
+// Just for testing reasons, will be deleted in final version 
+void test() {
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(4000);
+  digitalWrite(LED_BUILTIN, LOW);
 }

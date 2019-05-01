@@ -10,6 +10,7 @@
 #include <SD.h>
 
 // Global variables
+// A bit hacky, but needs to be instantiated as global variables, otherwise it won't work! Issue due to PROGMEM. 
 const char UBLOX_INIT[] PROGMEM = {
   // Disable NMEA
   0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x24, // GxGGA off
@@ -49,7 +50,7 @@ class SettingGPS {
     void GpsInit();
     void RawxConfig();
     // Variables
-    int buffer_length = 2000;
+    int buffer_length;
 };
 
 class SettingSD {
@@ -65,9 +66,6 @@ class SettingSD {
     File bmsFile; // Declare file where BMS data will be written onto.
     File gpsFile; // Declare file where GPS data will be written onto.
     File root; // Declare root of store data.
-
-  private:
-
 };
 
 class SettingBMS {
@@ -83,11 +81,11 @@ class SettingBMS {
     float temperature; // Variable to store temperature value
     int analog_value; // Analog voltage value that Arduino reads
     float real_voltage; // Real measured voltage
-    const float MaxVoltageBattery = 4.2; // Maximum voltage on battery when charged
-    const float MaxVoltageArduino = 3.3; // Maximum voltage Arduino should read
-    const float LowVoltage = 3.3; // Lowest acceptable voltage
-    const float Vpp = MaxVoltageBattery / 1023; // Volts per point <-> accuracy of measurement
-    const float VoltageRatio = MaxVoltageBattery / MaxVoltageArduino; // Ratio to mathematically upscale voltage
+    float MaxVoltageBattery; // Maximum voltage on battery when charged
+    float MaxVoltageArduino; // Maximum voltage Arduino should read
+    float LowVoltage; // Lowest acceptable voltage
+    float Vpp; // Volts per point <-> accuracy of measurement
+    float VoltageRatio; // Ratio to mathematically upscale voltage
 
 };
 
