@@ -29,3 +29,10 @@ void SettingSD::OpenFile(File dir) {
     }
   }
 }
+
+void SettingSD::WriteBmsLog(double temp, double volt) {
+  bmsFile = SD.open("BMS.txt", FILE_WRITE);
+  bmsFile.print(" Temperature ");  bmsFile.print(temp);
+  bmsFile.print("°C, Voltage "); bmsFile.print(volt); bmsFile.println("V");
+  bmsFile.close();
+}

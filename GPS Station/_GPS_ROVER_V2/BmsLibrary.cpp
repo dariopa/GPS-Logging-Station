@@ -18,12 +18,13 @@ float SettingBMS::Temperature() {
   sensors.requestTemperatures(); // Send the command to get temperatures
   temperature = sensors.getTempCByIndex(0); // Read the temperature
   delay(5);
-
+  
   return temperature;
 }
 
 float SettingBMS::Voltage() {
   analog_value = analogRead(A0);
   real_voltage = (analog_value * Vpp) * VoltageRatio;
+  
   return real_voltage;
 }

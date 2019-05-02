@@ -61,6 +61,7 @@ class SettingSD {
     // Methods
     void SdInit();
     void OpenFile(File dir);
+    void WriteBmsLog(double temp, double volt);
 
     // Variables
     File bmsFile; // Declare file where BMS data will be written onto.
@@ -76,7 +77,7 @@ class SettingBMS {
     // Methods
     float Temperature();
     float Voltage();
-
+    
     // Variables
     float temperature; // Variable to store temperature value
     int analog_value; // Analog voltage value that Arduino reads

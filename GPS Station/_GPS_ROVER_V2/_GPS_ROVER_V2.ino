@@ -12,20 +12,16 @@ void setup() {
   // Initialize all serial ports:
   Serial1.begin(9600); // Start serial port with GPS receiver
   Serial2.begin(9600); // Start serial port with XBEE module
-  pinMode(LED_BUILTIN, OUTPUT); // Just for test reasons, will be deleted in final version
 
   tpl.TPLInit(); // Initialize TPL5110
   sd.SdInit(); // Initialize SD Card
   gps.GpsInit(); // send configuration for GPS initialisation
   gps.RawxConfig(); // send configuration data in UBX protocol to receive RAWX and SFRBX
 
-  //###### BMS #######
+  // BMS 
   float temp = bms.Temperature();
   float volt = bms.Voltage();
-  sd.bmsFile = SD.open("BMS.txt", FILE_WRITE);
-  sd.bmsFile.print(" Temperature ");  sd.bmsFile.print(temp);
-  sd.bmsFile.print("°C, Voltage "); sd.bmsFile.print(volt); sd.bmsFile.println("V");
-  sd.bmsFile.close();
+  sd.WriteBmsLog(temp, volt);
   if (bms_switch) {
     if (temp < 0.0 or volt < bms.LowVoltage) {
       Serial2.print("Battery or temperature low!");
@@ -70,11 +66,4 @@ void loop() {
   if (tpl.TPLMeasureTime(tpl.current_time, tpl.start_time, measurment_time)) {
     tpl.TPLToggle();
   }
-}
-
-// Just for testing reasons, will be deleted in final version 
-void test() {
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(4000);
-  digitalWrite(LED_BUILTIN, LOW);
 }
