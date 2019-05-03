@@ -13,13 +13,13 @@ TrajectoryPlanner::TrajectoryPlanner(ros::NodeHandle& nh, ros::NodeHandle& nh_pr
   sub_pose_ = nh.subscribe("uav_pose", 1, &TrajectoryPlanner::uavPoseCallback, this);
   
   // service server
-  takeoff_service_ = nh.advertiseService("takeoff", &TrajectoryPlanner::takeoffCallback, this);
+  trajectory_service_ = nh.advertiseService("trajectory", &TrajectoryPlanner::trajectoryPlanner, this);
+
   traverse_service_ = nh.advertiseService("traverse", &TrajectoryPlanner::traverseCallback, this);
   release_service_ = nh.advertiseService("release", &TrajectoryPlanner::releaseCallback, this);
+  recovery_service_ = nh.advertiseService("recovery", &TrajectoryPlanner::recoveryCallback, this);
   homecoming_service_ = nh.advertiseService("homecoming", &TrajectoryPlanner::homecomingCallback, this);
 
-  // service call execution
-  execute_service_ = nh.advertiseService("execute", &TrajectoryPlanner::executeCachedTrajectory, this);
 }
 
 void TrajectoryPlanner::loadParameters() {
@@ -29,7 +29,9 @@ void TrajectoryPlanner::loadParameters() {
         nh_private_.getParam("wp3_z", wp3_z_) &&
         nh_private_.getParam("v_max", v_max_) &&
         nh_private_.getParam("a_max", a_max_) &&
-        nh_private_.getParam("safety_altitude", safety_altitude_))
+        nh_private_.getParam("safety_altitude", safety_altitude_) &&
+        nh_private_.getParam("approach_distance", approach_distance_) &&
+        nh_private_.getParam("tolerance_distance", tolerance_distance_))
         << "Error loading parameters!";
 }
 
@@ -43,66 +45,22 @@ void TrajectoryPlanner::getFirstPose() {
   sp_z_ = current_position_.translation().z();
 }
 
-bool TrajectoryPlanner::takeoffCallback(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response) {
-
-  // check if actually a take off
-  if (wp1_z_ < 0) {
-    ROS_WARN("Not a takeoff - not executing!");
-    return false;
+bool TrajectoryPlanner::checkPosition(double x_pos, double y_pos, double z_pos) {
+  while(true) {
+    ros::spinOnce();
+    ros::Duration(0.1).sleep();
+    distance_to_goal_ = sqrt(pow(current_position_.translation().x() - x_pos, 2) + 
+                             pow(current_position_.translation().y() - y_pos, 2) + 
+                             pow(current_position_.translation().z() - z_pos, 2));
+    if (distance_to_goal_ <= tolerance_distance_) {
+      break;
+    }
   }
-
-  // check if takeoff altitude is above safety altitude
-  if (wp1_z_ < safety_altitude_) {
-    ROS_WARN("Take off too low. Increase takeoff altitude - not executing!");
-    return false;
-  }
-
-  mav_trajectory_generation::Vertex::Vector vertices;
-  const int dimension = 3;
-  const int derivative_to_optimize = mav_trajectory_generation::derivative_order::SNAP;
-  // we have 2 vertices: start = current position || end = Final point.
-  mav_trajectory_generation::Vertex start(dimension), end(dimension);
-
-  // set start point constraints
-  // (current position, and everything else zero)
-  start.makeStartOrEnd(current_position_.translation(), derivative_to_optimize);
-  vertices.push_back(start);
-
-  // plan final point if needed (to end position at rest).
-  Eigen::Vector3d end_point_position = current_position_.translation();
-  end_point_position.x() = current_position_.translation().x();
-  end_point_position.y() = current_position_.translation().y();
-  end_point_position.z() = current_position_.translation().z() + wp1_z_;
-  end.makeStartOrEnd(end_point_position, derivative_to_optimize);
-  vertices.push_back(end);
-
-  // compute segment times
-  std::vector<double> segment_times;
-  segment_times = estimateSegmentTimes(vertices, v_max_, a_max_);
-
-
-  // compute segment times at mach slower speed / acceleration and use for first segment.
-  std::vector<double> segment_times_slow;
-  segment_times_slow = estimateSegmentTimes(vertices, v_max_ * 0.4, a_max_ * 0.4);
-  segment_times[0] = segment_times_slow[0];
-
-
-  // solve trajectory
-  const int N = 10;
-  mav_trajectory_generation::PolynomialOptimization<N> opt(dimension);
-  opt.setupFromVertices(vertices, segment_times, derivative_to_optimize);
-  opt.solveLinear();
-
-  // get trajectory
-  trajectory_.clear();
-  opt.getTrajectory(&trajectory_);
-  
-  visualizeCachedTrajectory();
+  ROS_WARN("TRAJECTORY TERMINATED.");
   return true;
 }
 
-bool TrajectoryPlanner::traverseCallback(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response) {
-
+bool TrajectoryPlanner::linearPlanner(double x_pos, double y_pos, double z_pos, double velocity, double accel) {
   mav_trajectory_generation::Vertex::Vector vertices;
   const int dimension = 3;
   const int derivative_to_optimize = mav_trajectory_generation::derivative_order::SNAP;
@@ -116,15 +74,15 @@ bool TrajectoryPlanner::traverseCallback(std_srvs::Empty::Request& request, std_
 
   // plan final point if needed (to end position at rest).
   Eigen::Vector3d end_point_position = current_position_.translation();
-  end_point_position.x() = wp2_x_;
-  end_point_position.y() = wp2_y_;
-  end_point_position.z() = current_position_.translation().z();
+  end_point_position.x() = x_pos;
+  end_point_position.y() = y_pos;
+  end_point_position.z() = z_pos;
   end.makeStartOrEnd(end_point_position, derivative_to_optimize);
   vertices.push_back(end);
 
   // compute segment times
   std::vector<double> segment_times;
-  segment_times = estimateSegmentTimes(vertices, v_max_, a_max_);
+  segment_times = estimateSegmentTimes(vertices, velocity, accel);
 
   // solve trajectory
   const int N = 10;
@@ -136,57 +94,93 @@ bool TrajectoryPlanner::traverseCallback(std_srvs::Empty::Request& request, std_
   trajectory_.clear();
   opt.getTrajectory(&trajectory_);
   
-  visualizeCachedTrajectory();
+  visualizeTrajectory();
+  return true;
+}
+
+
+bool TrajectoryPlanner::trajectoryPlanner(mav_drop_recovery::SetTargetPosition::Request& request, 
+                                          mav_drop_recovery::SetTargetPosition::Response& response) {
+  bool execute = request.execute;
+
+  if (request.command == "takeoff") {
+    double wp1_x = current_position_.translation().x();
+    double wp1_y = current_position_.translation().y();
+  
+    // check if actually a take off
+    if (wp1_z_ < 0) {
+      ROS_WARN("Not a takeoff - not executing!");
+      return false;
+    }
+    // check if takeoff altitude is above safety altitude
+    if (wp1_z_ < safety_altitude_) {
+      ROS_WARN("Take off too low. Increase takeoff altitude - not executing!");
+      return false;
+    }
+    // Ready to go!
+    linearPlanner(wp1_x ,wp1_y, wp1_z_, v_max_*0.2, a_max_ * 0.3);
+
+    if (request.execute == true) {
+      executeTrajectory();
+    }
+    return true;
+  }
+}
+
+
+bool TrajectoryPlanner::traverseCallback(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response) {
+  double wp2_z = current_position_.translation().z(); 
+  
+  linearPlanner(wp2_x_, wp2_y_, wp2_z, v_max_, a_max_);
+  ROS_WARN_STREAM("PRESS ENTER TO EXECUTE PATH.");
+  std::cin.get();
+  executeTrajectory();
+  checkPosition(wp2_x_, wp2_y_, wp2_z);
   return true;
 }
 
 bool TrajectoryPlanner::releaseCallback(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response) {
-
+  double wp3_x = current_position_.translation().x();
+  double wp3_y = current_position_.translation().y();
   // check if mav would crash into ground
   if (wp3_z_ < 0) {
     ROS_WARN("Crashes onto ground - not executing!");
     return false;
   }
-
   if (wp3_z_ > 0.3) {
     ROS_WARN("Drop point too high, potential risk to damage to gps box - not executing!");
     return false;
   }
 
-  mav_trajectory_generation::Vertex::Vector vertices;
-  const int dimension = 3;
-  const int derivative_to_optimize = mav_trajectory_generation::derivative_order::SNAP;
-  // we have 2 vertices: start = current position || end = Final point.
-  mav_trajectory_generation::Vertex start(dimension), end(dimension);
+  linearPlanner(wp3_x, wp3_y, wp3_z_, v_max_*0.2, a_max_);
+  ROS_WARN_STREAM("PRESS ENTER TO EXECUTE PATH.");
+  std::cin.get();
+  executeTrajectory();
+  checkPosition(wp3_x, wp3_y, wp3_z_);
+  return true;
+}
 
-  // set start point constraints
-  // (current position, and everything else zero)
-  start.makeStartOrEnd(current_position_.translation(), derivative_to_optimize);
-  vertices.push_back(start);
+bool TrajectoryPlanner::recoveryCallback(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response) {
+  double wp_x_approach = wp2_x_ * (1 - approach_distance_/(sqrt(pow(wp2_x_, 2) + pow(wp2_y_, 2))));
+  double wp_y_approach = wp2_y_ * (1 - approach_distance_/(sqrt(pow(wp2_x_, 2) + pow(wp2_y_, 2))));
 
-  // plan final point if needed (to end position at rest).
-  Eigen::Vector3d end_point_position = current_position_.translation();
-  end_point_position.x() = current_position_.translation().x();
-  end_point_position.y() = current_position_.translation().y();
-  end_point_position.z() = wp3_z_;
-  end.makeStartOrEnd(end_point_position, derivative_to_optimize);
-  vertices.push_back(end);
+  linearPlanner(wp_x_approach, wp_y_approach, wp3_z_ + 0.3, v_max_ * 0.1, a_max_);
+  ROS_WARN_STREAM("PRESS ENTER TO GO TO APPROACHING POSITION.");
+  std::cin.get();
+  executeTrajectory();
+  checkPosition(wp_x_approach, wp_y_approach, wp3_z_ + 0.3);
 
-  // compute segment times
-  std::vector<double> segment_times;
-  segment_times = estimateSegmentTimes(vertices, v_max_*0.2, a_max_);
+  linearPlanner(wp2_x_, wp2_y_, wp3_z_ + 0.2, v_max_ * 0.1, a_max_);
+  ROS_WARN_STREAM("PRESS ENTER TO APPROACH GPS BOX.");
+  std::cin.get();
+  executeTrajectory();
+  checkPosition(wp2_x_, wp2_y_, wp3_z_ + 0.2);
 
-  // solve trajectory
-  const int N = 10;
-  mav_trajectory_generation::PolynomialOptimization<N> opt(dimension);
-  opt.setupFromVertices(vertices, segment_times, derivative_to_optimize);
-  opt.solveLinear();
-
-  // get trajectory
-  trajectory_.clear();
-  opt.getTrajectory(&trajectory_);
-  
-  visualizeCachedTrajectory();
+  linearPlanner(wp2_x_, wp2_y_, wp1_z_/2, v_max_ * 0.1, a_max_);
+  ROS_WARN_STREAM("PRESS ENTER TO ELEVATE GPS BOX.");
+  std::cin.get();
+  executeTrajectory();
+  checkPosition(wp2_x_, wp2_y_, wp1_z_/2);
   return true;
 }
 
@@ -233,14 +227,17 @@ bool TrajectoryPlanner::homecomingCallback(std_srvs::Empty::Request& request, st
   trajectory_.clear();
   opt.getTrajectory(&trajectory_);
   
-  visualizeCachedTrajectory();
+  visualizeTrajectory();
+
+  ROS_WARN_STREAM("PRESS ENTER TO EXECUTE PATH.");
+  std::cin.get();
+  executeTrajectory();
   return true;
 }
 
-bool TrajectoryPlanner::visualizeCachedTrajectory() {
+bool TrajectoryPlanner::visualizeTrajectory() {
   visualization_msgs::MarkerArray markers;
-  double distance =
-      0.3; // Distance by which to seperate additional markers. Set 0.0 to disable.
+  double distance = 0.3; // Distance by which to seperate additional markers. Set 0.0 to disable.
   std::string frame_id = "world";
 
   mav_trajectory_generation::drawMavTrajectory(trajectory_,
@@ -251,7 +248,7 @@ bool TrajectoryPlanner::visualizeCachedTrajectory() {
   return true;
 }
 
-bool TrajectoryPlanner::executeCachedTrajectory(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response) {
+bool TrajectoryPlanner::executeTrajectory() {
   mav_planning_msgs::PolynomialTrajectory4D msg;
   mav_trajectory_generation::trajectoryToPolynomialTrajectoryMsg(trajectory_, &msg);
   msg.header.frame_id = "world";

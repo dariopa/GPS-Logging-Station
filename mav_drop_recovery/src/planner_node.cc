@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
   ros::Duration(5.0).sleep();
   planner.loadParameters();
   planner.getFirstPose();
-  ROS_WARN_STREAM("ROSSERVICE READY TO GO!");
+  ROS_WARN_STREAM("READY TO GO!");
 
   ros::spin();
 

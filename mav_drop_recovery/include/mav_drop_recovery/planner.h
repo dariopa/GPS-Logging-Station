@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cmath>
 #include <ros/ros.h>
 #include <std_srvs/Empty.h>
 #include <Eigen/Dense>
@@ -6,6 +7,8 @@
 #include <mav_trajectory_generation/polynomial_optimization_linear.h>
 #include <mav_trajectory_generation_ros/ros_visualization.h>
 #include <mav_trajectory_generation_ros/ros_conversions.h>
+
+#include "mav_drop_recovery/SetTargetPosition.h"
 
 class TrajectoryPlanner {
  public:
@@ -17,19 +20,26 @@ class TrajectoryPlanner {
 
   void getFirstPose();
 
-  bool takeoffCallback(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
+  bool checkPosition(double x_pos, double y_pos, double z_pos);
+
+  bool linearPlanner(double x_pos, double y_pos, double z_pos, double velocity, double accel);
+
+  bool trajectoryPlanner(mav_drop_recovery::SetTargetPosition::Request& request, 
+                         mav_drop_recovery::SetTargetPosition::Response& response);
 
   bool traverseCallback(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
 
   bool releaseCallback(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
 
+  bool recoveryCallback(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
+
   bool homecomingCallback(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
 
   // Visualize the last planned trajectory
-  bool visualizeCachedTrajectory();
+  bool visualizeTrajectory();
 
   // Output last planned trajectory
-  bool executeCachedTrajectory(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
+  bool executeTrajectory();
 
   private:
   // Publisher
@@ -40,12 +50,12 @@ class TrajectoryPlanner {
   ros::Subscriber sub_pose_;
 
   // Services
-  ros::ServiceServer takeoff_service_;
+  ros::ServiceServer trajectory_service_;
+
   ros::ServiceServer traverse_service_;
   ros::ServiceServer release_service_;
+  ros::ServiceServer recovery_service_;
   ros::ServiceServer homecoming_service_;
-  ros::ServiceServer visualize_service_;
-  ros::ServiceServer execute_service_;
 
   ros::NodeHandle& nh_;
   ros::NodeHandle& nh_private_;
@@ -56,6 +66,7 @@ class TrajectoryPlanner {
   double sp_x_;
   double sp_y_;
   double sp_z_;
+  double distance_to_goal_;
 
   // Parameters
   double wp1_z_;
@@ -65,5 +76,7 @@ class TrajectoryPlanner {
   double v_max_; // m/s
   double a_max_; // m/s^2
   double safety_altitude_; // m above take-off height.
+  double approach_distance_;
+  double tolerance_distance_;
 
 };

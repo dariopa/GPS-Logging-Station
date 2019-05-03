@@ -1,9 +1,7 @@
 ###########################################
 WAYPOINT NAVIGATOR
 ###########################################
-
-# Define your waypoints in the yaml-file. 
-cd ~/catkin_ws/src/waypoint_navigator/paths
+navigator/paths
 
 # In a first command window, type: 
 roslaunch waypoint_navigator mav_sim.launch
@@ -12,6 +10,8 @@ roslaunch waypoint_navigator mav_sim.launch
 roslaunch waypoint_navigator waypoint_navigator.launch
 
 # In a third command window, type: 
+# Define your waypoints in the yaml-file. 
+cd ~/catkin_ws/src/waypoint_
 rosservice call /firefly/visualize_path
 
 # Still in the third command window, type: 
@@ -65,11 +65,3 @@ rosservice call /firefly/traverse
 rosservice call /firefly/release
 
 rosservice call /firefly/execute
-
-
-
-
-
-
-
-

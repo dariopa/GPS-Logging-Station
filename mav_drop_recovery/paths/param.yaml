@@ -1,11 +1,14 @@
 # Waypoints
 wp1_z: 2
 wp2_x: 5.0
-wp2_y: -10.0
+wp2_y: 5.0
 wp3_z: 0.2
 # Parameters for drone
 v_max: 1.5
 a_max: 1.0
 # Parameters for safety flight
 safety_altitude: 0.5
-
+# For recovery, define approaching distance from gps rover
+approach_distance: 1.0
+# For checking position
+tolerance_distance: 0.05
