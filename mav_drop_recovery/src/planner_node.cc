@@ -9,14 +9,9 @@
  *
  * -> open new terminal
  * 
- * To call the takeoff service
- *   rosservice call /firefly/takeoff
+ * To call the trajectory service
+ *   rosservice call /firefly/trajectory
  * 
- * To visualize trajectory
- *   rosservice call /firefly/visualize
- * 
- * To execute path
- *   rosservice call /firefly/execute
  */
 
 #include  "ros/ros.h"
@@ -30,7 +25,7 @@ int main(int argc, char** argv) {
   ros::NodeHandle nh_private("~");
   TrajectoryPlanner planner(n, nh_private);
   ROS_WARN_STREAM("SLEEPING FOR 5s TO WAIT FOR CLEAR CONSOLE");
-  ros::Duration(5.0).sleep();
+  ros::Duration(4.0).sleep();
   planner.loadParameters();
   planner.getFirstPose();
   ROS_WARN_STREAM("READY TO GO!");

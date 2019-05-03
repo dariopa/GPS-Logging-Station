@@ -22,18 +22,22 @@ class TrajectoryPlanner {
 
   bool checkPosition(double x_pos, double y_pos, double z_pos);
 
-  bool linearPlanner(double x_pos, double y_pos, double z_pos, double velocity, double accel);
+  bool trajectoryPlanner(double x_pos, double y_pos, double z_pos, double velocity, double accel);
 
-  bool trajectoryPlanner(mav_drop_recovery::SetTargetPosition::Request& request, 
-                         mav_drop_recovery::SetTargetPosition::Response& response);
+  // Service caller for trajectory
+  bool trajectoryCallback(mav_drop_recovery::SetTargetPosition::Request& request, 
+                          mav_drop_recovery::SetTargetPosition::Response& response);
 
-  bool traverseCallback(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
+  // Different trajectories
+  bool takeoff();
 
-  bool releaseCallback(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
+  bool traverse();
 
-  bool recoveryCallback(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
+  bool release();
 
-  bool homecomingCallback(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
+  bool recovery();
+
+  bool homecoming();
 
   // Visualize the last planned trajectory
   bool visualizeTrajectory();
@@ -52,31 +56,24 @@ class TrajectoryPlanner {
   // Services
   ros::ServiceServer trajectory_service_;
 
-  ros::ServiceServer traverse_service_;
-  ros::ServiceServer release_service_;
-  ros::ServiceServer recovery_service_;
-  ros::ServiceServer homecoming_service_;
-
   ros::NodeHandle& nh_;
   ros::NodeHandle& nh_private_;
   Eigen::Affine3d current_position_;
   mav_trajectory_generation::Trajectory trajectory_;
 
   // Startpoints
-  double sp_x_;
-  double sp_y_;
-  double sp_z_;
+  Eigen::Affine3d startpoint_;
   double distance_to_goal_;
 
   // Parameters
-  double wp1_z_;
-  double wp2_x_;
-  double wp2_y_;
-  double wp3_z_;
+  double waypoint_1_z_; // takeoff height
+  double waypoint_2_x_; // x coord. for traverse
+  double waypoint_2_y_; // y coord. for traverse
+  double waypoint_3_z_; // release height
   double v_max_; // m/s
   double a_max_; // m/s^2
   double safety_altitude_; // m above take-off height.
-  double approach_distance_;
-  double tolerance_distance_;
+  double approach_distance_; // distance from which gps will be approached
+  double tolerance_distance_; // used in checkPosition();
 
 };
