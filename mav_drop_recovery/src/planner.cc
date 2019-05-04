@@ -37,13 +37,13 @@ void TrajectoryPlanner::getFirstPose() {
   startpoint_.translation() = current_position_.translation();
 }
 
-bool TrajectoryPlanner::checkPosition(double x_pos, double y_pos, double z_pos) {
+bool TrajectoryPlanner::checkPosition(Eigen::Affine3d end_position) {
   while(true) {
     ros::spinOnce();
     ros::Duration(0.1).sleep();
-    distance_to_goal_ = sqrt(pow(current_position_.translation().x() - x_pos, 2) + 
-                             pow(current_position_.translation().y() - y_pos, 2) + 
-                             pow(current_position_.translation().z() - z_pos, 2));
+    distance_to_goal_ = sqrt(pow(current_position_.translation().x() - end_position.translation().x(), 2) + 
+                             pow(current_position_.translation().y() - end_position.translation().y(), 2) + 
+                             pow(current_position_.translation().z() - end_position.translation().z(), 2));
     if (distance_to_goal_ <= tolerance_distance_) {
       break;
     }
@@ -52,7 +52,7 @@ bool TrajectoryPlanner::checkPosition(double x_pos, double y_pos, double z_pos) 
   return true;
 }
 
-bool TrajectoryPlanner::trajectoryPlanner(double x_pos, double y_pos, double z_pos, double velocity, double accel) {
+bool TrajectoryPlanner::trajectoryPlannerTwoVertices(Eigen::Affine3d end_position, double velocity, double accel) {
   mav_trajectory_generation::Vertex::Vector vertices;
   const int dimension = 3;
   const int derivative_to_optimize = mav_trajectory_generation::derivative_order::SNAP;
@@ -66,9 +66,9 @@ bool TrajectoryPlanner::trajectoryPlanner(double x_pos, double y_pos, double z_p
 
   // plan final point if needed (to end position at rest).
   Eigen::Vector3d end_point_position = current_position_.translation();
-  end_point_position.x() = x_pos;
-  end_point_position.y() = y_pos;
-  end_point_position.z() = z_pos;
+  end_point_position.x() = end_position.translation().x();
+  end_point_position.y() = end_position.translation().y();
+  end_point_position.z() = end_position.translation().z();
   end.makeStartOrEnd(end_point_position, derivative_to_optimize);
   vertices.push_back(end);
 
@@ -90,106 +90,11 @@ bool TrajectoryPlanner::trajectoryPlanner(double x_pos, double y_pos, double z_p
   return true;
 }
 
-bool TrajectoryPlanner::trajectoryCallback(mav_drop_recovery::SetTargetPosition::Request& request, 
-                                           mav_drop_recovery::SetTargetPosition::Response& response) {
-  // TAKEOFF                                          
-  if (request.command == "takeoff") {
-    takeoff();
-  }
-  // TRAVERSE
-  else if (request.command == "traverse") {
-    traverse();
-  }
-  // RELEASE
-  else if (request.command == "release") {
-    release();
-  }
-  // RECOVERY
-  else if (request.command == "recovery") {
-    recovery();
-  }
-  // HOMECOMING
-  else if (request.command == "homecoming") {
-    homecoming();
-  }
-  else {
-    ROS_WARN("INCORRECT_INPUT - CHECK AND RETRY");
-    response.success == false;
-    return false; 
-  }
-
-  // Check if trajectory execution is demanded.
-  if (request.execute == true) {
-    executeTrajectory();
-    ROS_WARN("TRAJECTORY IS BEING EXECUTED!");
-  }
-
-  response.success == true;
-  return true;
-}
-
-bool TrajectoryPlanner::takeoff() {
-  double waypoint_x = current_position_.translation().x();
-  double waypoint_y = current_position_.translation().y();
-
-  // check if actually a take off
-  if (waypoint_1_z_ < 0) {
-    ROS_WARN("Not a takeoff - not executing!");
-    return false;
-  }
-  // check if takeoff altitude is above safety altitude
-  if (waypoint_1_z_ < safety_altitude_) {
-    ROS_WARN("Take off too low. Increase takeoff altitude - not executing!");
-    return false;
-  }
-
-  trajectoryPlanner(waypoint_x ,waypoint_y, waypoint_1_z_, v_max_*0.2, a_max_ * 0.3);
-  return true;
-}
-
-bool TrajectoryPlanner::traverse() {
-  double waypoint_z = current_position_.translation().z(); 
-  
-  trajectoryPlanner(waypoint_2_x_, waypoint_2_y_, waypoint_z, v_max_, a_max_);
-  return true;
-}
-
-bool TrajectoryPlanner::release() {
-  double waypoint_x = current_position_.translation().x();
-  double waypoint_y = current_position_.translation().y();
-
-  // check if mav would crash into ground
-  if (waypoint_3_z_ < 0) {
-    ROS_WARN("Crashes onto ground - not executing!");
-    return false;
-  }
-  if (waypoint_3_z_ > 0.3) {
-    ROS_WARN("Drop point too high, potential risk to damage to gps box - not executing!");
-    return false;
-  }
-
-  trajectoryPlanner(waypoint_x, waypoint_y, waypoint_3_z_, v_max_*0.2, a_max_);
-  return true;
-}
-
-bool TrajectoryPlanner::recovery() {
-  double wp_x_approach = waypoint_2_x_ * (1 - approach_distance_/(sqrt(pow(waypoint_2_x_, 2) + pow(waypoint_2_y_, 2))));
-  double wp_y_approach = waypoint_2_y_ * (1 - approach_distance_/(sqrt(pow(waypoint_2_x_, 2) + pow(waypoint_2_y_, 2))));
-
-  trajectoryPlanner(wp_x_approach, wp_y_approach, waypoint_3_z_ + 0.3, v_max_ * 0.1, a_max_);
-
-  trajectoryPlanner(waypoint_2_x_, waypoint_2_y_, waypoint_3_z_ + 0.2, v_max_ * 0.1, a_max_);
-
-  trajectoryPlanner(waypoint_2_x_, waypoint_2_y_, waypoint_1_z_/2, v_max_ * 0.1, a_max_);
-  return true;
-}
-
-bool TrajectoryPlanner::homecoming() {
-
+bool TrajectoryPlanner::trajectoryPlannerThreeVertices(Eigen::Affine3d middle_position, Eigen::Affine3d end_position, double velocity, double accel) {
   mav_trajectory_generation::Vertex::Vector vertices;
   const int dimension = 3;
   const int derivative_to_optimize = mav_trajectory_generation::derivative_order::SNAP;
-  // we have 2 vertices: start = current position || end = Final point.
+  // we have 3 vertices: start = current position | middle = intermediate position | end = Final point.
   mav_trajectory_generation::Vertex start(dimension), middle(dimension), end(dimension);
 
   // set start point constraints
@@ -198,18 +103,18 @@ bool TrajectoryPlanner::homecoming() {
   vertices.push_back(start);
 
   // set middle point constraints
-  Eigen::Vector3d middle_point_position = current_position_.translation();
-  middle_point_position.x() = (waypoint_2_x_ + startpoint_.translation().x()) / 2;
-  middle_point_position.y() = (waypoint_2_y_ + startpoint_.translation().y()) / 2;
-  middle_point_position.z() = waypoint_1_z_;
+  Eigen::Vector3d middle_point_position;
+  middle_point_position.x() = middle_position.translation().x();
+  middle_point_position.y() = middle_position.translation().y();
+  middle_point_position.z() = middle_position.translation().z();
   middle.addConstraint(mav_trajectory_generation::derivative_order::POSITION, middle_point_position);
   vertices.push_back(middle);
 
   // plan final point if needed (to end position at rest).
   Eigen::Vector3d end_point_position = current_position_.translation();
-  end_point_position.x() = startpoint_.translation().x();
-  end_point_position.y() = startpoint_.translation().y();
-  end_point_position.z() = (waypoint_1_z_+startpoint_.translation().z()) / 2;
+  end_point_position.x() = end_position.translation().x();
+  end_point_position.y() = end_position.translation().y();
+  end_point_position.z() = end_position.translation().z();
   end.makeStartOrEnd(end_point_position, derivative_to_optimize);
   vertices.push_back(end);
 
@@ -228,6 +133,161 @@ bool TrajectoryPlanner::homecoming() {
   opt.getTrajectory(&trajectory_);
   
   visualizeTrajectory();
+  return true;
+}
+
+bool TrajectoryPlanner::trajectoryCallback(mav_drop_recovery::SetTargetPosition::Request& request, 
+                                           mav_drop_recovery::SetTargetPosition::Response& response) {
+  
+  bool function_execute = false; // if trajectory-function returns false, then it shall not be executed
+  // TAKEOFF                                          
+  if (request.command == "takeoff") {
+    function_execute = takeoff();
+  }
+  // TRAVERSE
+  else if (request.command == "traverse") {
+    function_execute = traverse();
+  }
+  // RELEASE
+  else if (request.command == "release") {
+    function_execute = release();
+  }
+  // RECOVERY
+  else if (request.command == "recovery") {
+    recovery(request.execute); // we don't want to send execution, as we will execute in the function itself
+  }
+  // HOMECOMING
+  else if (request.command == "homecoming") {
+    function_execute = homecoming();
+  }
+  else {
+    ROS_WARN("INCORRECT_INPUT - CHECK AND RETRY");
+    response.success == false;
+    return false; 
+  }
+
+  // Check if trajectory execution is demanded.
+  if (request.execute == true && function_execute == true) {
+    executeTrajectory();
+    checkPosition(checkpoint_);
+  }
+
+  response.success == true;
+  return true;
+}
+
+bool TrajectoryPlanner::takeoff() {
+  Eigen::Affine3d waypoint_takeoff = current_position_;
+
+  // check if actually a takeoff, i.e. check if drone wants to collide to ground
+  if (waypoint_1_z_ < startpoint_.translation().z()) {
+    ROS_WARN("Not a takeoff, you crash into the ground - not executing!");
+    return false;
+  }
+  // check if takeoff altitude is above safety altitude
+  if (waypoint_1_z_ < startpoint_.translation().z() + safety_altitude_) {
+    ROS_WARN("Take off too low. Increase takeoff altitude - not executing!");
+    return false;
+  }
+  // only conduce takeoff when really in takeoff area, which is somewhere around 1 meters distant from the startpoint
+  if (sqrt(pow(current_position_.translation().x() - startpoint_.translation().x(), 2) +
+           pow(current_position_.translation().y() - startpoint_.translation().y(), 2) +
+           pow(current_position_.translation().z() - startpoint_.translation().z(), 2)) > 1.0) { 
+    ROS_WARN("You're not in the takeoff region. Takeoff can't be executed - not executing!");
+    return false;
+  }
+
+  // if checks are done, then takeoff
+  waypoint_takeoff.translation().z() = waypoint_1_z_; 
+  checkpoint_ = waypoint_takeoff;
+  trajectoryPlannerTwoVertices(waypoint_takeoff, v_max_*0.2, a_max_ * 0.3);
+  return true;
+}
+
+bool TrajectoryPlanner::traverse() {
+  Eigen::Affine3d waypoint_traverse = current_position_; 
+
+  // check if you're high enough for traversation
+  if (abs(waypoint_traverse.translation().z() - waypoint_1_z_) > 1) {
+    ROS_WARN("You're not on the correct traversation height - not executing!");
+    return false;
+  }
+  
+  // if checks are done, then traverse
+  waypoint_traverse.translation().x() = waypoint_2_x_; 
+  waypoint_traverse.translation().y() = waypoint_2_y_;
+  checkpoint_ = waypoint_traverse;
+  trajectoryPlannerTwoVertices(waypoint_traverse, v_max_, a_max_);
+  return true;
+}
+
+bool TrajectoryPlanner::release() {
+  Eigen::Affine3d waypoint_release = current_position_;
+
+  // if checks are all good, then release
+  waypoint_release.translation().z() = waypoint_3_z_;
+  checkpoint_ = waypoint_release;
+  trajectoryPlannerTwoVertices(waypoint_release, v_max_*0.2, a_max_);
+  return true;
+}
+
+bool TrajectoryPlanner::recovery(bool execute) {
+  // First go to approach position
+  Eigen::Affine3d waypoint_approach;
+  waypoint_approach.translation().x() = waypoint_2_x_ * (1 - approach_distance_/(sqrt(pow(waypoint_2_x_, 2) + pow(waypoint_2_y_, 2))));
+  waypoint_approach.translation().y() = waypoint_2_y_ * (1 - approach_distance_/(sqrt(pow(waypoint_2_x_, 2) + pow(waypoint_2_y_, 2))));
+  waypoint_approach.translation().z() = waypoint_3_z_ + 0.3;
+  checkpoint_ = waypoint_approach;
+  trajectoryPlannerTwoVertices(waypoint_approach, v_max_ * 0.3, a_max_);
+  if (execute) {
+    executeTrajectory();
+    ROS_WARN("Going to approach position!");
+    checkPosition(checkpoint_);
+  }
+
+  // Pick up GPS box
+  Eigen::Affine3d waypoint_pickup;
+  waypoint_pickup.translation().x() = waypoint_2_x_;
+  waypoint_pickup.translation().y() = waypoint_2_y_;
+  waypoint_pickup.translation().z() = waypoint_3_z_ + 0.3;
+  checkpoint_ = waypoint_pickup;
+  trajectoryPlannerTwoVertices(waypoint_pickup, v_max_ * 0.1, a_max_);
+  if (execute) {
+    executeTrajectory();
+    ROS_WARN("Pickeing up gps box!");
+    checkPosition(checkpoint_);
+    
+  }
+
+  // Elevate with GPS box
+  Eigen::Affine3d waypoint_flyup;
+  waypoint_flyup.translation().x() = waypoint_2_x_;
+  waypoint_flyup.translation().y() = waypoint_2_y_;
+  waypoint_flyup.translation().z() = waypoint_1_z_/2;
+  checkpoint_ = waypoint_flyup;
+  trajectoryPlannerTwoVertices(waypoint_flyup, v_max_ * 0.3, a_max_);
+  if (execute) {
+    executeTrajectory();
+    ROS_WARN("Flying up with gps box!");
+    checkPosition(checkpoint_);
+    ROS_WARN("Ready for homecoming!");
+  }
+  return true;
+}
+
+bool TrajectoryPlanner::homecoming() {
+  Eigen::Affine3d waypoint_homecoming_middle; 
+  waypoint_homecoming_middle.translation().x() = (current_position_.translation().x() + startpoint_.translation().x()) / 2;
+  waypoint_homecoming_middle.translation().y() = (current_position_.translation().y() + startpoint_.translation().y()) / 2;
+  waypoint_homecoming_middle.translation().z() = waypoint_1_z_;
+
+  Eigen::Affine3d waypoint_homecoming_end;
+  waypoint_homecoming_end.translation().x() = startpoint_.translation().x();
+  waypoint_homecoming_end.translation().y() = startpoint_.translation().y();
+  waypoint_homecoming_end.translation().z() = (waypoint_1_z_+startpoint_.translation().z()) / 2;
+
+  checkpoint_ = waypoint_homecoming_end;
+  trajectoryPlannerThreeVertices(waypoint_homecoming_middle, waypoint_homecoming_end, v_max_, a_max_);
   return true;
 }
 

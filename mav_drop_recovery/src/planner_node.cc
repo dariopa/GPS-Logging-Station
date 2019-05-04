@@ -5,7 +5,7 @@
  *-> open terminal
  * 
  * Launch via
- *   roslaunch mav_drop_recovery takeoff.launch
+ *   roslaunch mav_drop_recovery trajectory.launch
  *
  * -> open new terminal
  * 

@@ -20,9 +20,11 @@ class TrajectoryPlanner {
 
   void getFirstPose();
 
-  bool checkPosition(double x_pos, double y_pos, double z_pos);
+  bool checkPosition(Eigen::Affine3d end_position);
 
-  bool trajectoryPlanner(double x_pos, double y_pos, double z_pos, double velocity, double accel);
+  bool trajectoryPlannerTwoVertices(Eigen::Affine3d end_position, double velocity, double accel);
+
+  bool trajectoryPlannerThreeVertices(Eigen::Affine3d middle_position, Eigen::Affine3d end_position, double velocity, double accel);
 
   // Service caller for trajectory
   bool trajectoryCallback(mav_drop_recovery::SetTargetPosition::Request& request, 
@@ -35,7 +37,7 @@ class TrajectoryPlanner {
 
   bool release();
 
-  bool recovery();
+  bool recovery(bool execute);
 
   bool homecoming();
 
@@ -63,6 +65,7 @@ class TrajectoryPlanner {
 
   // Startpoints
   Eigen::Affine3d startpoint_;
+  Eigen::Affine3d checkpoint_;
   double distance_to_goal_;
 
   // Parameters
