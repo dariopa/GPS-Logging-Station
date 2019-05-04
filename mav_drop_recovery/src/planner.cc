@@ -208,7 +208,7 @@ bool TrajectoryPlanner::traverse() {
   Eigen::Affine3d waypoint_traverse = current_position_; 
 
   // check if you're high enough for traversation
-  if (abs(waypoint_traverse.translation().z() - waypoint_1_z_) > 1) {
+  if (abs(waypoint_traverse.translation().z() - waypoint_1_z_) > 0.5) {
     ROS_WARN("You're not on the correct traversation height - not executing!");
     return false;
   }
