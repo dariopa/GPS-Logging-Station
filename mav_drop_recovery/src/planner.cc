@@ -200,7 +200,7 @@ bool TrajectoryPlanner::takeoff() {
   // if checks are done, then takeoff
   waypoint_takeoff.translation().z() = waypoint_1_z_; 
   checkpoint_ = waypoint_takeoff;
-  trajectoryPlannerTwoVertices(waypoint_takeoff, v_max_*0.2, a_max_ * 0.3);
+  trajectoryPlannerTwoVertices(waypoint_takeoff, v_max_*0.5, a_max_);
   return true;
 }
 
@@ -232,45 +232,51 @@ bool TrajectoryPlanner::release() {
 }
 
 bool TrajectoryPlanner::recovery(bool execute) {
-  // First go to approach position
-  Eigen::Affine3d waypoint_approach;
-  waypoint_approach.translation().x() = waypoint_2_x_ * (1 - approach_distance_/(sqrt(pow(waypoint_2_x_, 2) + pow(waypoint_2_y_, 2))));
-  waypoint_approach.translation().y() = waypoint_2_y_ * (1 - approach_distance_/(sqrt(pow(waypoint_2_x_, 2) + pow(waypoint_2_y_, 2))));
-  waypoint_approach.translation().z() = waypoint_3_z_ + 0.3;
-  checkpoint_ = waypoint_approach;
-  trajectoryPlannerTwoVertices(waypoint_approach, v_max_ * 0.3, a_max_);
+  // First slightly return on the traverse-path
+  Eigen::Affine3d waypoint_step_one;
+  waypoint_step_one.translation().x() = waypoint_2_x_ * (1 - approach_distance_/(sqrt(pow(waypoint_2_x_, 2) + pow(waypoint_2_y_, 2))));
+  waypoint_step_one.translation().y() = waypoint_2_y_ * (1 - approach_distance_/(sqrt(pow(waypoint_2_x_, 2) + pow(waypoint_2_y_, 2))));
+  waypoint_step_one.translation().z() = current_position_.translation().z();
+  checkpoint_ = waypoint_step_one;
+  trajectoryPlannerTwoVertices(waypoint_step_one, v_max_, a_max_);
   if (execute) {
     executeTrajectory();
-    ROS_WARN("Going to approach position!");
+    ROS_WARN("Slightly stepping back on traversation path.");
+    checkPosition(checkpoint_);
+  }
+
+  // Then, go down on pickup height
+  Eigen::Affine3d waypoint_step_two = waypoint_step_one;
+  waypoint_step_two.translation().z() = waypoint_3_z_ + 0.3;
+  checkpoint_ = waypoint_step_two;
+  trajectoryPlannerTwoVertices(waypoint_step_two, v_max_ * 0.3, a_max_);
+  if (execute) {
+    executeTrajectory();
+    ROS_WARN("Descending on approach position.");
     checkPosition(checkpoint_);
   }
 
   // Pick up GPS box
-  Eigen::Affine3d waypoint_pickup;
-  waypoint_pickup.translation().x() = waypoint_2_x_;
-  waypoint_pickup.translation().y() = waypoint_2_y_;
-  waypoint_pickup.translation().z() = waypoint_3_z_ + 0.3;
-  checkpoint_ = waypoint_pickup;
-  trajectoryPlannerTwoVertices(waypoint_pickup, v_max_ * 0.1, a_max_);
+  Eigen::Affine3d waypoint_step_three = waypoint_step_two;
+  waypoint_step_three.translation().x() = waypoint_2_x_;
+  waypoint_step_three.translation().y() = waypoint_2_y_;
+  checkpoint_ = waypoint_step_three;
+  trajectoryPlannerTwoVertices(waypoint_step_three, v_max_ * 0.1, a_max_);
   if (execute) {
     executeTrajectory();
-    ROS_WARN("Pickeing up gps box!");
+    ROS_WARN("Picking up gps box.");
     checkPosition(checkpoint_);
-    
   }
 
   // Elevate with GPS box
-  Eigen::Affine3d waypoint_flyup;
-  waypoint_flyup.translation().x() = waypoint_2_x_;
-  waypoint_flyup.translation().y() = waypoint_2_y_;
-  waypoint_flyup.translation().z() = waypoint_1_z_/2;
-  checkpoint_ = waypoint_flyup;
-  trajectoryPlannerTwoVertices(waypoint_flyup, v_max_ * 0.3, a_max_);
+  Eigen::Affine3d waypoint_step_four = waypoint_step_three;
+  waypoint_step_four.translation().z() = waypoint_1_z_/2;
+  checkpoint_ = waypoint_step_four;
+  trajectoryPlannerTwoVertices(waypoint_step_four, v_max_ * 0.3, a_max_);
   if (execute) {
     executeTrajectory();
-    ROS_WARN("Flying up with gps box!");
+    ROS_WARN("Elevating.");
     checkPosition(checkpoint_);
-    ROS_WARN("Ready for homecoming!");
   }
   return true;
 }
