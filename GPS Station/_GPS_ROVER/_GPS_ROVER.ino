@@ -5,7 +5,7 @@ SettingSD sd;
 SettingBMS bms;
 SettingTPL tpl;
 
-float measurment_time = 2; // Declare measurment time in minutes
+float measurment_time = 3; // Declare measurment time in minutes
 bool bms_switch = false; // If bms is connected, then true. If not connected, then false.
 
 void setup() {
