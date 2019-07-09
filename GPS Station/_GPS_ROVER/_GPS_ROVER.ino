@@ -10,9 +10,9 @@ float measurment_time = 3; // Declare measurment time in minutes
 
 void setup() {
   // Initialize all serial ports:
-  Serial.begin(9600); // Start serial port for debugging
-  Serial1.begin(9600); // Start serial port with GPS receiver
-  Serial2.begin(9600); // Start serial port with XBEE module
+  Serial.begin(38400); // Start serial port for debugging
+  Serial1.begin(38400); // Start serial port with GPS receiver
+  Serial2.begin(38400); // Start serial port with XBEE module
 
   tpl.TPLInit(); // Initialize TPL5110
   sd.SdInit(); // Initialize SD Card
