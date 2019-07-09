@@ -7,7 +7,6 @@ SettingBMS bms;
 SettingTPL tpl;
 
 float measurment_time = 3; // Declare measurment time in minutes
-bool bms_switch = true; // If bms is connected, then true. If not connected, then false.
 
 void setup() {
   // Initialize all serial ports:
@@ -20,23 +19,16 @@ void setup() {
   gps.GpsInit(); // send configuration for GPS initialisation
   gps.RawxConfig(); // send configuration data in UBX protocol to receive RAWX and SFRBX
 
-  // BMS 
+  // BMS
   float temp = bms.Temperature();
   float volt = bms.Voltage();
+  Serial.println(temp);
+  Serial.println(volt);
   sd.WriteBmsLog(temp, volt);
-  if (bms_switch) {
-    if (temp < 0.0 or volt < bms.LowVoltage) {
-      Serial2.print("Battery or temperature low!");
-      delay(20);
-      tpl.TPLToggle();
-    }
-  }
-  else {
-    if (temp < 0.0) {
-      Serial2.print("Temperature below 0 degree");
-      delay(20);
-      tpl.TPLToggle();
-    }
+  if (temp < 0.0 or volt < bms.LowVoltage) {
+    Serial2.print("Battery or temperature low!");
+    delay(20);
+    tpl.TPLToggle();
   }
 
   // Open GPS File

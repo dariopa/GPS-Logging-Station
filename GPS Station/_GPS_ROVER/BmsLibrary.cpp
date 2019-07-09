@@ -6,7 +6,7 @@ SettingBMS::SettingBMS() {
   // Anything required when instantiating an object, goes here.
   MaxVoltageBattery = 4.2;
   MaxVoltageArduino = 3.3;
-  LowVoltage = 3.3;
+  LowVoltage = 3.2;
   Vpp = MaxVoltageArduino / 1023;
 }
 
