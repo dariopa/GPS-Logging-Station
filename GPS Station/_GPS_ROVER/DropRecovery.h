@@ -86,8 +86,6 @@ class SettingBMS {
     float MaxVoltageArduino; // Maximum voltage Arduino should read
     float LowVoltage; // Lowest acceptable voltage
     float Vpp; // Volts per point <-> accuracy of measurement
-    float VoltageRatio; // Ratio to mathematically upscale voltage
-
 };
 
 class SettingTPL {

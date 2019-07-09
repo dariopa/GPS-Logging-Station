@@ -7,8 +7,7 @@ SettingBMS::SettingBMS() {
   MaxVoltageBattery = 4.2;
   MaxVoltageArduino = 3.3;
   LowVoltage = 3.3;
-  Vpp = MaxVoltageBattery / 1023;
-  VoltageRatio = MaxVoltageBattery / MaxVoltageArduino;
+  Vpp = MaxVoltageArduino / 1023;
 }
 
 float SettingBMS::Temperature() {
@@ -16,6 +15,7 @@ float SettingBMS::Temperature() {
   DallasTemperature sensors(&oneWire); // Pass oneWire reference to Dallas Temperature.
   sensors.begin(); // Start up the library. IC Default 9 bit.
   sensors.requestTemperatures(); // Send the command to get temperatures
+  delay(1000); // Wait before reading out - IMPORTANT!
   temperature = sensors.getTempCByIndex(0); // Read the temperature
   delay(5);
   
@@ -23,8 +23,8 @@ float SettingBMS::Temperature() {
 }
 
 float SettingBMS::Voltage() {
-  analog_value = analogRead(A0);
-  real_voltage = (analog_value * Vpp) * VoltageRatio;
+  analog_value = analogRead(A10);
+  real_voltage = (analog_value * Vpp) * MaxVoltageBattery / MaxVoltageArduino;
   
   return real_voltage;
 }

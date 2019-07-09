@@ -1,3 +1,4 @@
+
 #include "DropRecovery.h"
 
 SettingGPS gps;
@@ -6,10 +7,11 @@ SettingBMS bms;
 SettingTPL tpl;
 
 float measurment_time = 3; // Declare measurment time in minutes
-bool bms_switch = false; // If bms is connected, then true. If not connected, then false.
+bool bms_switch = true; // If bms is connected, then true. If not connected, then false.
 
 void setup() {
   // Initialize all serial ports:
+  Serial.begin(9600); // Start serial port for debugging
   Serial1.begin(9600); // Start serial port with GPS receiver
   Serial2.begin(9600); // Start serial port with XBEE module
 
