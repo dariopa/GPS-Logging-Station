@@ -94,6 +94,7 @@ class SettingTPL {
     SettingTPL();
 
     // Method
+    void LEDInit();
     void TPLInit();
     bool TPLMeasureTime(unsigned long current_time, unsigned long start_time, unsigned long measurment_time);
     void TPLToggle();
@@ -101,6 +102,8 @@ class SettingTPL {
     // Variable
     unsigned long start_time;
     unsigned long current_time;
+    int led_green;
+    int led_red;
 };
 
 
