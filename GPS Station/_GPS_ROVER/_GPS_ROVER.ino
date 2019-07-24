@@ -7,13 +7,23 @@ SettingBMS bms;
 SettingTPL tpl;
 
 float measurment_time = 3; // Declare measurment time in minutes
+int led_green = 2; // Digital pin 2
+int led_red = 3; // Digital pin 3
 
 void setup() {
   // Initialize all serial ports:
   Serial.begin(38400); // Start serial port for debugging
   Serial1.begin(38400); // Start serial port with GPS receiver
   Serial2.begin(38400); // Start serial port with XBEE module
+  
+  pinMode(led_green, OUTPUT); // Green LED
+  pinMode(led_red, OUTPUT); // Red LED
 
+  // Feedback for switching on GPS logging unit
+  digitalWrite(led_green, HIGH);
+  delay(2000);
+  digitalWrite(led_green, LOW);
+  
   tpl.TPLInit(); // Initialize TPL5110
   sd.SdInit(); // Initialize SD Card
   gps.GpsInit(); // send configuration for GPS initialisation
