@@ -1,8 +1,10 @@
 /*
- * Box 2: Kanal 2608.
+ * Box 1: Kanal 2607
+ * Box 2: Kanal 2608
+ * Box 3: Kanal 2609
  * Box 4: Kanal 2610
+ * Box 5: Kanal 2611
  */
-
 
 #include "DropRecovery.h"
 SettingGPS gps;
