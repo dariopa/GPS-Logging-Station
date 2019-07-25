@@ -26,7 +26,9 @@ void SettingSD::OpenFile(File dir) {
     }
     else {
       file_count += 1;
+      entry.close();
     }
+   
   }
 }
 
