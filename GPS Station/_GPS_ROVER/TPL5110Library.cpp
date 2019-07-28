@@ -3,18 +3,6 @@
 
 SettingTPL::SettingTPL() {
   // Anything required when instantiating an object, goes here.
-  led_green = 2;
-  led_red = 3;
-}
-
-void SettingTPL::LEDInit() {
-  pinMode(led_green, OUTPUT);
-  pinMode(led_red, OUTPUT);
-  
-  // Feedback, that system is on
-  digitalWrite(led_green, HIGH);
-  delay(2000);
-  digitalWrite(led_green, LOW);
 }
 
 void SettingTPL::TPLInit() {

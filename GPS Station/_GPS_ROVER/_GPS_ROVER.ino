@@ -1,10 +1,10 @@
 /*
- * Box 1: Kanal 2607
- * Box 2: Kanal 2608
- * Box 3: Kanal 2609
- * Box 4: Kanal 2610
- * Box 5: Kanal 2611
- */
+   Box 1: Kanal 2607
+   Box 2: Kanal 2608
+   Box 3: Kanal 2609
+   Box 4: Kanal 2610
+   Box 5: Kanal 2611
+*/
 
 #include "DropRecovery.h"
 SettingGPS gps;
@@ -12,8 +12,47 @@ SettingSD sd;
 SettingBMS bms;
 SettingTPL tpl;
 
+const unsigned char UBX_HEADER[] = { 0xB5, 0x62};
+
+struct UBX_RAWX {
+  uint64_t rcvTow; // 8 bytes
+  uint16_t week; // 2 bytes
+};
+
+UBX_RAWX rawx;
+
+void parseGPS() {
+  int byte_position = 0;
+  const int header_size = sizeof(UBX_HEADER);
+  const int payload_size = sizeof(UBX_RAWX);
+
+  while ( Serial1.available() ) {
+    byte c = Serial1.read();
+    if ( byte_position < header_size ) {
+      if ( c == UBX_HEADER[byte_position] ) {
+        byte_position++;
+      }
+      else {
+        byte_position = 0;
+      }
+    }
+    else if ( (byte_position - header_size) < payload_size ) {
+      ((unsigned char*)(&rawx))[byte_position - header_size] = c;
+      byte_position++;
+    }
+    else if ( (byte_position - header_size) >= payload_size ) {
+      byte_position = 0;
+    }
+  }
+  delay(20000);
+  // Serial.write(rawx.rcvTow);
+  Serial.print(rawx.week);
+}
+
 float measurment_time = 3; // Declare measurment time in minutes
-int cts = 30;
+int cts = 30; // clear to send for XBee
+int led_green = 2;
+int led_red = 3;
 
 void setup() {
   // Initialize all serial ports:
@@ -21,11 +60,12 @@ void setup() {
   Serial1.begin(38400); // Start serial port with GPS receiver
   Serial2.begin(115200); // Start serial port with XBEE module
 
+  pinMode(led_green, OUTPUT);
+  pinMode(led_red, OUTPUT);
   pinMode(cts, INPUT);
 
-  tpl.LEDInit(); // Initialize green and red led + switch on green led for 2 seconds when switched on
   tpl.TPLInit(); // Initialize TPL5110
-  sd.SdInit(); // Initialize SD Card
+  sd.SdInit(led_green, led_red); // Initialize SD Card
   gps.GpsInit(); // send configuration for GPS initialisation
   gps.RawxConfig(); // send configuration data in UBX protocol to receive RAWX and SFRBX
 
@@ -42,6 +82,8 @@ void setup() {
   // Open GPS File
   sd.root = SD.open("/");
   sd.OpenFile(sd.root);
+
+  parseGPS();
 
   // Start measuring the time
   tpl.start_time = millis();
@@ -65,11 +107,11 @@ void loop() {
 
   if (buffer_index != 0) {
     // when GPS receiver is done transmitting data, store it on microSD
-    sd.gpsFile.write(rawx_buffer , buffer_index); 
+    sd.gpsFile.write(rawx_buffer , buffer_index);
     sd.gpsFile.flush();
 
     // Send data via telemetry
-    
+
     int cts_counter = 0;
     while (sent_index < buffer_index && cts_counter < 150) {
       if ((int) digitalRead(cts) == 0) {
@@ -82,7 +124,7 @@ void loop() {
       }
     }
   }
-  
+
   tpl.current_time = millis(); // measure current time
   if (tpl.TPLMeasureTime(tpl.current_time, tpl.start_time, measurment_time)) {
     tpl.TPLToggle();

@@ -4,15 +4,25 @@ SettingSD::SettingSD() {
   // Anything required when instantiating an object, goes here.
 }
 
-void SettingSD::SdInit() {
+void SettingSD::SdInit(int led_green, int led_red) {
   pinMode(10, OUTPUT);
   if (!SD.begin(10)) {
-    Serial.println("initialisation failed");
-    delay(20);
+    Serial.println("microSD card initialisation failed");
+    for (int i = 0; i <= 2; i++) {
+      digitalWrite(led_red, HIGH);
+      delay(200);
+      digitalWrite(led_red, LOW);
+      delay(200);
+    }
     return;
   }
-  Serial.println("initialisation succeeded");
-  delay(20);
+  Serial.println("microSD card initialisation succeeded");
+  for (int i = 0; i <= 2; i++) {
+    digitalWrite(led_green, HIGH);
+    delay(200);
+    digitalWrite(led_green, LOW);
+    delay(200);
+  }
 }
 
 void SettingSD::OpenFile(File dir) {
@@ -28,7 +38,7 @@ void SettingSD::OpenFile(File dir) {
       file_count += 1;
       entry.close();
     }
-   
+
   }
 }
 

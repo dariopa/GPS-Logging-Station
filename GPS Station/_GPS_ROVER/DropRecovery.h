@@ -10,7 +10,7 @@
 #include <SD.h>
 
 // Global variables
-// A bit hacky, but needs to be instantiated as global variables, otherwise it won't work! Issue due to PROGMEM. 
+// A bit hacky, but needs to be instantiated as global variables, otherwise it won't work! Issue due to PROGMEM.
 const char UBLOX_INIT[] PROGMEM = {
   // Disable NMEA
   0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x23, // GxGGA off
@@ -40,6 +40,7 @@ const char UBLOX_INIT_RAWX[] PROGMEM = {
   0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x02, 0x13, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x25, 0x3D, // RXM-SFRBX on
 };
 
+
 // Classes
 class SettingGPS {
   public:
@@ -59,7 +60,7 @@ class SettingSD {
     SettingSD();
 
     // Methods
-    void SdInit();
+    void SdInit(int led_green, int led_red);
     void OpenFile(File dir);
     void WriteBmsLog(double temp, double volt);
 
@@ -77,7 +78,7 @@ class SettingBMS {
     // Methods
     float Temperature();
     float Voltage();
-    
+
     // Variables
     float temperature; // Variable to store temperature value
     int analog_value; // Analog voltage value that Arduino reads
@@ -94,7 +95,6 @@ class SettingTPL {
     SettingTPL();
 
     // Method
-    void LEDInit();
     void TPLInit();
     bool TPLMeasureTime(unsigned long current_time, unsigned long start_time, unsigned long measurment_time);
     void TPLToggle();
@@ -102,8 +102,6 @@ class SettingTPL {
     // Variable
     unsigned long start_time;
     unsigned long current_time;
-    int led_green;
-    int led_red;
 };
 
 
