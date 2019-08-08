@@ -1,7 +1,10 @@
-# Masterthesis: GPS-Logging-Station 
-This repository contains code (Arduino) to log GPS data via UART, store it on an SD card via SPI and transmit it over an Xbee via UART. 
+# GPS-Logging-Station 
+This repository contains all required files to build a GPS logging unit from scratch. Included are: 
+- C++ code (Arduino) for software logic
+- CAD model (.prt-files for NX12 Siemens and .stl-files for compatibility with other systems)
+- Electrical schematics  
 
 Author:
 - Dario Panzuto ([email](mailto:dario.panzuto@gmail.com))
 
-## Further information will follow up. 
+## This repository will be updated as soon as our project has been published. 
